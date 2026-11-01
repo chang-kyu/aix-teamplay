@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>안산 청년 혜택 알리미</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* 10/28 UI 초안 팔레트 그대로 · 한 열짜리 모바일 화면 + 하단 탭 */
+  --bg: #F4F6F5; --surface: #FFFFFF; --ink: #15201D; --ink2: #3D4743; --muted: #5A6662;
+  --line: #E1E6E4; --line2: #EEF1F0; --field: #CBD3D0; --chip: #F1F3F2;
+  --accent: #2440B8; --accent-hover: #1A2F8A; --accent-bg: #EDF0FC;
+  --good: #0A6650; --good-bg: #E2F2EC;
+  --soon: #8A4A00; --soon-bar: #D98A1F; --soon-bg: #FCEFD9; --soon-line: #E8C48C;
+  --check: #4B5450; --check-bg: #ECEFEE;
+  --no: #8C3B2E; --no-bg: #F7E8E4;
+  --urgent: #C2410C;
+  --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-text-size-adjust: 100%; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-hover); }
+button, input, select { font-family: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+svg.i { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+h1, h2, h3 { text-wrap: balance; }
+
+.app { max-width: 440px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+.top { display: flex; align-items: center; gap: 10px; padding: 14px 20px; }
+.logo { width: 32px; height: 32px; border-radius: 9px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.brand { display: flex; flex-direction: column; line-height: 1.25; }
+.brand b { font-size: 16px; }
+.brand span { font-size: 12px; color: var(--muted); }
+main { flex: 1; padding-bottom: 96px; }
+
+.panel { margin: 0 16px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; gap: 8px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; }
+.panel-head span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.panel-head a { font-size: 13px; font-weight: 600; text-decoration: none; padding: 8px 4px; margin: -8px -4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 5px 10px; border-radius: 999px; background: var(--chip); font-size: 13px; }
+.note { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 0; }
+
+.intro { padding: 22px 20px 12px; display: flex; flex-direction: column; gap: 6px; }
+.intro h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.intro p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.eyebrow { font-size: 13px; font-weight: 600; color: var(--accent); }
+
+.banner { margin: 4px 16px 0; padding: 14px 16px; border-radius: 14px; background: var(--accent-bg); border: 1px solid #C9D2F5; display: flex; gap: 12px; align-items: center; }
+.banner b { font-size: 26px; font-family: var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.banner p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink2); }
+.banner p strong { color: var(--ink); }
+
+.filters { display: flex; gap: 8px; padding: 12px 20px 4px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.filters button { flex: none; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--field); background: var(--surface); font-size: 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+.filters .n { font-family: var(--mono); font-size: 12.5px; opacity: .75; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.group-title { margin: 0; padding: 20px 20px 10px; font-size: 15px; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
+.group-title small { font-size: 13px; font-weight: 500; color: var(--muted); }
+.list { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+
+.card { padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); text-decoration: none; }
+.card:hover { border-color: var(--field); color: var(--ink); }
+.card.soon { border: 1.5px solid var(--soon-line); }
+.card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card h3 { margin: 0; font-size: 16px; line-height: 1.45; font-weight: 600; }
+.card .benefit { margin: 0; font-size: 14px; color: var(--ink2); line-height: 1.5; }
+.card .why { margin: 0; padding-top: 10px; border-top: 1px solid var(--line2); font-size: 13px; line-height: 1.5; color: var(--muted); display: flex; gap: 6px; }
+.card .why svg { margin-top: 3px; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.b-good { background: var(--good-bg); color: var(--good); }
+.b-move { background: var(--accent-bg); color: var(--accent); }
+.b-soon { background: var(--soon-bg); color: var(--soon); }
+.b-check { background: var(--check-bg); color: var(--check); }
+.b-no { background: var(--no-bg); color: var(--no); }
+.dday { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--line2); font-family: var(--mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.dday.urgent { background: var(--urgent); color: #fff; }
+.dday.muted { font-family: var(--font); font-weight: 500; color: var(--check); }
+
+.progress { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line2); }
+.progress-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink2); }
+.progress-row b { font-family: var(--mono); font-weight: 600; color: var(--soon); }
+.bar { height: 8px; border-radius: 999px; background: var(--line2); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: var(--soon-bar); }
+.more { display: flex; justify-content: flex-end; align-items: center; gap: 2px; font-size: 13px; font-weight: 600; color: var(--accent); }
+
+details.fold { margin: 24px 16px 0; padding: 0 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+details.fold summary { min-height: 52px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; cursor: pointer; list-style: none; }
+details.fold summary::-webkit-details-marker { display: none; }
+details.fold summary small { font-size: 13px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.fold-row { display: block; padding: 12px 0; border-top: 1px solid var(--line2); text-decoration: none; color: var(--ink); }
+.fold-row b { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.fold-row span { font-size: 13px; line-height: 1.5; color: var(--no); display: flex; gap: 6px; }
+.fold-row span svg { margin-top: 3px; }
+
+/* 상세 */
+.back { display: inline-flex; align-items: center; gap: 4px; margin: 4px 16px 0; padding: 10px 4px; font-size: 14px; font-weight: 600; text-decoration: none; }
+.detail-head { padding: 8px 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+.detail-head h1 { margin: 0; font-size: 22px; line-height: 1.4; letter-spacing: -0.02em; }
+.detail-head p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink2); }
+.sec { margin: 12px 16px 0; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sec h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.verdict { font-size: 15px; font-weight: 600; line-height: 1.5; margin: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.checks li { display: grid; grid-template-columns: 24px 1fr; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line2); }
+.checks li:first-child { border-top: 0; padding-top: 2px; }
+.checks .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
+.checks b { display: block; font-size: 13px; color: var(--muted); font-weight: 600; }
+.checks span { font-size: 14px; line-height: 1.5; }
+.self { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.self li { display: flex; gap: 8px; font-size: 14px; line-height: 1.5; }
+.self li::before { content: ''; flex: none; width: 16px; height: 16px; margin-top: 3px; border: 1.5px solid var(--field); border-radius: 4px; }
+blockquote { margin: 0; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-bg); border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.6; color: var(--ink2); }
+.kv { display: grid; grid-template-columns: 72px 1fr; gap: 6px 10px; font-size: 14px; line-height: 1.5; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.kv .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.btn { height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 16px; font-weight: 600; text-decoration: none; border: 0; cursor: pointer; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); color: #fff; }
+.btn-ghost { background: var(--surface); color: var(--accent); border: 1.5px solid var(--field); }
+.bonus { padding: 10px 12px; border-radius: 10px; background: var(--soon-bg); color: var(--soon); font-size: 13.5px; line-height: 1.5; }
+.soon-box { padding: 12px; border-radius: 12px; background: var(--chip); font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+
+/* 입력 */
+.form { margin: 0 16px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; display: flex; flex-direction: column; gap: 24px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field-label { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; }
+.req { font-size: 12px; font-weight: 600; color: var(--accent); }
+.opt { font-size: 12px; font-weight: 500; color: var(--muted); }
+.help { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
+.ok { font-size: 13px; font-weight: 500; color: var(--good); display: flex; align-items: center; gap: 6px; }
+.err { font-size: 13px; font-weight: 500; color: var(--no); }
+.input { height: 52px; padding: 0 14px; border: 1.5px solid var(--field); border-radius: 12px; background: var(--surface); font-size: 16px; width: 100%; }
+.input:focus { border-color: var(--accent); outline: none; }
+.check-row { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; cursor: pointer; }
+.check-row input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.seg button { height: 48px; border-radius: 12px; border: 1.5px solid var(--field); background: var(--surface); font-size: 14px; cursor: pointer; padding: 0 6px; }
+.seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.examples { margin: 12px 16px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.examples button { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--field); background: var(--surface); font-size: 13px; cursor: pointer; }
+.privacy { margin: 16px 16px 0; padding: 14px 16px; border-radius: 14px; background: #E9EDEB; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.55; color: var(--ink2); }
+.cta { padding: 20px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
+.cta p { margin: 0; font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5; }
+
+/* 캘린더 */
+.cal-row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; text-decoration: none; color: var(--ink); }
+.cal-date { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: var(--chip); padding: 8px 0; }
+.cal-date b { font-family: var(--mono); font-size: 17px; }
+.cal-date span { font-size: 11.5px; color: var(--muted); }
+.cal-date.urgent { background: #FBE6DC; }
+.cal-date.urgent b { color: var(--urgent); }
+.cal-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cal-body h3 { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 600; }
+.cal-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.empty { margin: 0 16px; padding: 20px; text-align: center; font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--field); border-radius: 16px; }
+
+nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--line); }
+nav.tabs div { max-width: 440px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 6px 0 10px; }
+nav.tabs a { min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: var(--muted); font-size: 12px; font-weight: 500; }
+nav.tabs a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) { .card, .btn, .filters button { transition: border-color .15s, background .15s; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo" aria-hidden="true"><svg class="i" width="18" height="18" viewBox="0 0 16 16"><path d="M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0"/></svg></div>
+    <div class="brand"><b>혜택 알리미</b><span>안산 청년</span></div>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs" aria-label="주 메뉴"><div>
+    <a href="#results" data-tab="results"><svg class="i" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4.5h8M5.5 8h8M5.5 11.5h8"/><path d="M2.5 4.5h.1M2.5 8h.1M2.5 11.5h.1"/></svg>혜택</a>
+    <a href="#calendar" data-tab="calendar"><svg class="i" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>마감 캘린더</a>
+    <a href="#input" data-tab="input"><svg class="i" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 13.5c.6-2.6 2.6-4 5-4s4.4 1.4 5 4"/></svg>내 조건</a>
+  </div></nav>
+</div>
+
+<script>
+/* ===== 판정 엔진 (code/v3/judge.js 그대로) ===== */
+/*__JUDGE__*/
+
+/* ===== 데이터 (data/v3/policies_v3.json) ===== */
+const DATA = /*__POLICIES__*/;
+const POLICIES = DATA.policies;
+
+/* ===== 앱 ===== */
+const TODAY = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); // 한국 날짜
+const STORE_KEY = 'ansan-benefit-profile';
+const EXAMPLES = {
+  dohyun: { birthDate: '2004-03-15', ansanRegistered: true, ansanMoveInDate: '2025-02-02', ansanPriorYears: 0, gyeonggiBeforeAnsan: false, lifeZones: ['학교'] },
+  noreg: { birthDate: '2004-03-15', ansanRegistered: false, currentRegion: 'other', lifeZones: ['학교'] },
+};
+
+const state = { profile: null, isExample: true, filter: 'all', draft: null, error: '' };
+try {
+  const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+  if (saved && saved.birthDate) { state.profile = saved; state.isExample = false; }
+} catch (e) { /* 저장소를 못 쓰는 환경이면 예시로 시작 */ }
+if (!state.profile) state.profile = { ...EXAMPLES.dohyun };
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const md = (s) => s ? `${Number(s.slice(5, 7))}.${s.slice(8, 10).padStart(2, '0')}` : '';
+const dot = (s) => s ? s.replaceAll('-', '.') : '';
+const ym = (years) => { const m = Math.floor(years * 12 + 1e-6); const y = Math.floor(m / 12); return (y ? `${y}년 ` : '') + `${m % 12}개월`; };
+
+const SVG = {
+  check: '<path d="M3 8.5l3 3 7-7"/>',
+  clock: '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2.2 1.4"/>',
+  home: '<path d="M2.5 7.5L8 3l5.5 4.5"/><path d="M4 6.5v6.5h8V6.5"/>',
+  q: '<circle cx="8" cy="8" r="6"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4"/><path d="M8 11.4v.1"/>',
+  x: '<path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/>',
+  right: '<path d="M6 3.5L10.5 8 6 12.5"/>',
+  left: '<path d="M10 3.5L5.5 8 10 12.5"/>',
+  down: '<path d="M3.5 6L8 10.5 12.5 6"/>',
+  lock: '<rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>',
+  out: '<path d="M9 3h4v4M13 3L7.5 8.5"/><path d="M11 9.5V13H3V5h3.5"/>',
+  cal: '<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',
+};
+const icon = (k, size = 14, extra = '') => `<svg class="i" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true" ${extra}>${SVG[k]}</svg>`;
+
+const UI = {
+  eligible: { label: '충족', cls: 'good', icon: 'check', color: 'var(--good)', sub: '지금 조건으로 자격이 돼요' },
+  eligible_if_move_in: { label: '전입하면 충족', cls: 'move', icon: 'home', color: 'var(--accent)', sub: '안산으로 전입신고만 하면 돼요' },
+  eligible_from: { label: '곧 충족', cls: 'soon', icon: 'clock', color: 'var(--soon-bar)', sub: '날짜만 지나면 돼요' },
+  check: { label: '확인필요', cls: 'check', icon: 'q', color: 'var(--check)', sub: '정보가 더 있어야 판정할 수 있어요' },
+  ineligible: { label: '미충족', cls: 'no', icon: 'x', color: 'var(--no)', sub: '' },
+};
+const CHECK_ICON = { ok: ['check', 'good'], from: ['clock', 'soon'], move_in: ['home', 'move'], check: ['q', 'check'], no: ['x', 'no'] };
+
+const badge = (status) => `<span class="badge b-${UI[status].cls}">${icon(UI[status].icon, 12)}${UI[status].label}</span>`;
+function ddayBadge(rc) {
+  if (rc.state === 'open') return `<span class="dday${rc.dday <= 7 ? ' urgent' : ''}">D-${rc.dday}</span>`;
+  if (rc.state === 'upcoming') return `<span class="dday">접수 D-${rc.dday}</span>`;
+  if (rc.state === 'always') return '<span class="dday muted">상시</span>';
+  if (rc.state === 'closed') return '<span class="dday muted">이번 모집 마감</span>';
+  return '<span class="dday muted">공고 확인</span>';
+}
+
+function results() { return judgeAll(POLICIES, state.profile, TODAY); }
+const byId = (id) => POLICIES.find((p) => p.id === id);
+
+// '곧 충족' 진행 막대: 거주 시작일 → 충족일
+function progressOf(r) {
+  const p = byId(r.id), u = state.profile;
+  if (!r.eligibleFrom || !u.ansanRegistered) return null;
+  const res = p.residence;
+  const start = res.type === 'R4' && u.gyeonggiBeforeAnsan && u.gyeonggiSinceDate ? u.gyeonggiSinceDate : u.ansanMoveInDate;
+  const total = daysBetween(start, r.eligibleFrom), done = daysBetween(start, TODAY);
+  const pct = Math.max(0, Math.min(100, Math.round(done / total * 100)));
+  const label = res.minContinuousYears
+    ? `${res.type === 'R4' ? '경기도' : '안산'} 거주 ${ym(yearsBetween(start, TODAY))} / ${res.minContinuousYears}년`
+    : '나이 요건까지';
+  return { pct, label };
+}
+
+function profileChips() {
+  const u = state.profile, chips = [`만 ${ageOn(u.birthDate, TODAY)}세`];
+  if (u.ansanRegistered) {
+    chips.push(`안산 전입 ${ym(yearsBetween(u.ansanMoveInDate, TODAY))}`);
+    if (u.ansanPriorYears > 0) chips.push(`이전 안산 거주 ${u.ansanPriorYears}년`);
+    if (u.gyeonggiBeforeAnsan && u.gyeonggiSinceDate) chips.push(`경기도 전입 ${dot(u.gyeonggiSinceDate)}`);
+  } else {
+    chips.push('안산 전입신고 안 함');
+    if (u.currentRegion) chips.push(u.currentRegion === 'gyeonggi' ? '주소: 경기도' : '주소: 경기도 밖');
+    (u.lifeZones || []).forEach((z) => chips.push(`안산 소재 ${z}`));
+  }
+  return chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('');
+}
+
+function card(r) {
+  const p = byId(r.id), ui = UI[r.status];
+  const why = r.status === 'eligible' ? r.checks[0].text : r.hint;
+  const prog = r.status === 'eligible_from' ? progressOf(r) : null;
+  return `<a class="card${r.status === 'eligible_from' ? ' soon' : ''}" href="#p-${r.id}">
+    <div class="card-top">${badge(r.status)}${ddayBadge(r.recruit)}</div>
+    <h3>${esc(p.name)}</h3>
+    <p class="benefit">${esc(p.benefit)}</p>
+    ${prog ? `<div class="progress"><div class="progress-row"><span>${esc(prog.label)}</span><b>${dot(r.eligibleFrom)} 충족</b></div><div class="bar" aria-hidden="true"><i style="width:${prog.pct}%"></i></div></div>`
+           : `<p class="why">${icon(ui.icon, 14, `style="color:${ui.color}"`)}${esc(why)}</p>`}
+  </a>`;
+}
+
+/* ---------- 결과 화면 ---------- */
+function viewResults() {
+  const groups = groupByStatus(results());
+  const counts = Object.fromEntries(Object.entries(groups).map(([k, v]) => [k, v.length]));
+  const order = ['eligible', 'eligible_if_move_in', 'eligible_from', 'check'];
+  const show = (s) => state.filter === 'all' || state.filter === s;
+  const chipBtn = (key, label, color) => `<button type="button" data-filter="${key}" aria-pressed="${state.filter === key}">${color ? `<span class="dot" style="background:${color}"></span>` : ''}${label}${key !== 'all' ? ` <span class="n">${counts[key]}</span>` : ''}</button>`;
+
+  let html = `
+  <section class="panel" aria-label="내 조건">
+    <div class="panel-head"><span>내 조건</span><a href="#input">수정</a></div>
+    <div class="chips">${profileChips()}</div>
+    ${state.isExample ? '<p class="note">예시 프로필(도현: ERICA 3학년, 2025년 2월 안산 전입)로 보는 중이에요. <a href="#input">내 조건 넣기</a></p>' : ''}
+  </section>
+  <section class="intro">
+    <h1>받을 수 있는 혜택</h1>
+    <p>안산시 청년 사업 ${POLICIES.length}건을 내 조건과 맞춰 봤어요 · ${Number(TODAY.slice(5, 7))}월 ${Number(TODAY.slice(8))}일 기준</p>
+  </section>`;
+
+  if (counts.eligible_if_move_in > 0) {
+    html += `<div class="banner"><b>+${counts.eligible_if_move_in}</b><p><strong>전입신고만 하면 ${counts.eligible_if_move_in}건을 더 받을 수 있어요.</strong> 지금 주소지 대신 안산으로 주민등록을 옮기면 바로 자격이 생겨요.</p></div>`;
+  }
+
+  html += `<div class="filters" role="group" aria-label="판정 결과 필터">
+    ${chipBtn('all', '전체')}
+    ${order.filter((s) => counts[s]).map((s) => chipBtn(s, UI[s].label, UI[s].color)).join('')}
+    ${counts.ineligible ? chipBtn('ineligible', '미충족', UI.ineligible.color) : ''}
+  </div>`;
+
+  for (const s of order) {
+    if (!counts[s] || !show(s)) continue;
+    html += `<h2 class="group-title">${UI[s].label} <small>${UI[s].sub} · ${counts[s]}건</small></h2><div class="list">${groups[s].map(card).join('')}</div>`;
+  }
+  if (counts.ineligible && show('ineligible')) {
+    html += `<details class="fold"${state.filter === 'ineligible' ? ' open' : ''}><summary>미충족 ${counts.ineligible}건<small>왜 안 되는지 보기${icon('down')}</small></summary>
+      ${groups.ineligible.map((r) => `<a class="fold-row" href="#p-${r.id}"><b>${esc(byId(r.id).name)}</b><span>${icon('x')}${esc(r.hint)}</span></a>`).join('')}
+    </details>`;
+  }
+  return html;
+}
+
+/* ---------- 상세 화면 ---------- */
+function gcalLink(p, r) {
+  const rc = r.recruit, isOpen = rc.state === 'open';
+  const day = isOpen ? p.apply.end : p.apply.start;
+  if (!day) return '';
+  const next = addDays(day, 1).replaceAll('-', '');
+  const text = `${isOpen ? '[마감]' : '[접수 시작]'} ${p.name}`;
+  const q = new URLSearchParams({ action: 'TEMPLATE', text, dates: `${day.replaceAll('-', '')}/${next}`, details: `${p.benefit}\n${p.sourceUrl}` });
+  return `https://calendar.google.com/calendar/render?${q}`;
+}
+
+function viewDetail(id) {
+  const p = byId(id);
+  if (!p) return `<a class="back" href="#results">${icon('left', 16)}혜택 목록</a><p class="empty">해당 사업을 찾을 수 없어요.</p>`;
+  const r = judgePolicy(p, state.profile, TODAY), prog = r.status === 'eligible_from' ? progressOf(r) : null;
+  const verdict = {
+    eligible: '거주·나이 조건을 모두 채웠어요.',
+    eligible_if_move_in: r.hint,
+    eligible_from: `${dot(r.eligibleFrom)}부터 자격이 생겨요.`,
+    check: r.hint,
+    ineligible: r.hint,
+  }[r.status];
+  const period = p.apply.start || p.apply.end
+    ? `<span class="num">${dot(p.apply.start) || '?'} ~ ${dot(p.apply.end) || ''}</span>` : '공고 확인';
+  const cal = ['open', 'upcoming'].includes(r.recruit.state) ? gcalLink(p, r) : '';
+
+  return `
+  <a class="back" href="#results">${icon('left', 16)}혜택 목록</a>
+  <section class="detail-head">
+    <div class="card-top">${badge(r.status)}${ddayBadge(r.recruit)}</div>
+    <h1>${esc(p.name)}</h1>
+    <p>${esc(p.benefit)}</p>
+    ${prog ? `<div class="progress" style="border-top:0;padding-top:0"><div class="progress-row"><span>${esc(prog.label)}</span><b>${dot(r.eligibleFrom)} 충족</b></div><div class="bar" aria-hidden="true"><i style="width:${prog.pct}%"></i></div></div>` : ''}
+  </section>
+
+  <section class="sec">
+    <h2>판정 결과</h2>
+    <p class="verdict">${esc(verdict)}</p>
+    <ul class="checks">
+      ${r.checks.map((c) => { const [ic, cls] = CHECK_ICON[c.state]; return `<li><span class="ic b-${cls}">${icon(ic, 13)}</span><div><b>${esc(c.label)}</b><span>${esc(c.text)}</span></div></li>`; }).join('')}
+    </ul>
+    ${r.bonus ? `<div class="bonus">가점 · ${esc(r.bonus)}</div>` : ''}
+  </section>
+
+  ${r.selfCheck.length ? `<section class="sec">
+    <h2>본인이 확인해야 하는 조건</h2>
+    <ul class="self">${r.selfCheck.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+    <p class="note">소득·취업·학적 조건은 아직 판정하지 않아요. 공고문과 비교해 직접 확인해 주세요.</p>
+  </section>` : ''}
+
+  <section class="sec">
+    <h2>공고 원문 근거</h2>
+    <blockquote>${esc(p.evidence)}</blockquote>
+    ${p.residence.basisAssumed ? '<p class="note">원문에 기준일이 없어 신청일 기준으로 판정했어요.</p>' : ''}
+    <a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600;display:inline-flex;gap:4px;align-items:center">안산시청 원문 보기${icon('out')}</a>
+  </section>
+
+  <section class="sec">
+    <h2>신청</h2>
+    <dl class="kv">
+      <dt>접수 기간</dt><dd>${period}</dd>
+      ${p.apply.periodText ? `<dt>안내</dt><dd>${esc(p.apply.periodText)}</dd>` : ''}
+      <dt>분야</dt><dd>${esc(p.category)}</dd>
+    </dl>
+    ${p.apply.url ? `<a class="btn btn-primary" href="${esc(p.apply.url)}" target="_blank" rel="noopener">신청하러 가기${icon('out', 16)}</a>` : ''}
+    ${cal ? `<a class="btn btn-ghost" href="${esc(cal)}" target="_blank" rel="noopener">${icon('cal', 16)}구글 캘린더에 ${r.recruit.state === 'open' ? '마감일' : '접수 시작일'} 넣기</a>` : ''}
+  </section>
+
+  <section class="sec">
+    <h2>궁금한 점 물어보기</h2>
+    <div class="soon-box">"서류는 뭐가 필요해요?" 같은 질문에 공고 원문을 근거로 답하는 기능(RAG)은 다음 단계에서 연결할 예정이에요.</div>
+  </section>`;
+}
+
+/* ---------- 마감 캘린더 ---------- */
+function viewCalendar() {
+  const rs = results().filter((r) => r.status !== 'ineligible' && ['open', 'upcoming'].includes(r.recruit.state));
+  const key = (r) => { const p = byId(r.id); return r.recruit.state === 'open' ? p.apply.end : p.apply.start; };
+  rs.sort((a, b) => key(a).localeCompare(key(b)));
+  const always = results().filter((r) => r.recruit.state === 'always' && ['eligible', 'eligible_if_move_in'].includes(r.status));
+  const row = (r) => {
+    const p = byId(r.id), d = key(r), open = r.recruit.state === 'open';
+    return `<a class="cal-row" href="#p-${r.id}">
+      <div class="cal-date${open && r.recruit.dday <= 7 ? ' urgent' : ''}"><b>${md(d)}</b><span>${open ? '마감' : '접수 시작'}</span></div>
+      <div class="cal-body"><h3>${esc(p.name)}</h3><div class="cal-meta">${badge(r.status)}${ddayBadge(r.recruit)}</div></div>
+    </a>`;
+  };
+  return `
+  <section class="intro"><span class="eyebrow">마감 캘린더</span><h1>놓치면 안 되는 날짜</h1>
+    <p>지금 접수 중이거나 곧 열리는 사업이에요. 미충족은 뺐어요. 상세 화면에서 구글 캘린더에 넣을 수 있어요.</p></section>
+  ${rs.length ? `<div class="list">${rs.map(row).join('')}</div>` : '<p class="empty">지금 접수 중인 사업이 없어요.</p>'}
+  ${always.length ? `<h2 class="group-title">상시 신청 <small>언제든 신청할 수 있어요 · ${always.length}건</small></h2>
+    <div class="list">${always.map((r) => `<a class="cal-row" href="#p-${r.id}"><div class="cal-date"><b>상시</b><span>신청</span></div><div class="cal-body"><h3>${esc(byId(r.id).name)}</h3><div class="cal-meta">${badge(r.status)}</div></div></a>`).join('')}</div>` : ''}`;
+}
+
+/* ---------- 내 조건 입력 ---------- */
+function viewInput() {
+  const d = state.draft || (state.draft = { ...state.profile, lifeZones: [...(state.profile.lifeZones || [])] });
+  const reg = d.ansanRegistered;
+  const age = d.birthDate ? ageOn(d.birthDate, TODAY) : null;
+  const zones = d.lifeZones || [];
+  const zoneBtn = (z, label) => `<button type="button" data-zone="${z}" aria-pressed="${zones.includes(z)}">${label}</button>`;
+  const regionBtn = (v, label) => `<button type="button" data-region="${v}" aria-pressed="${(d.currentRegion || '') === v}">${label}</button>`;
+  return `
+  <section class="intro"><span class="eyebrow">내 조건</span>
+    <h1>받을 수 있는 혜택만<br>골라 드릴게요</h1>
+    <p>생년월일과 안산 전입일만 알려 주면 공고문의 거주·나이 조건과 하나씩 맞춰 볼게요.</p></section>
+
+  <form class="form" id="profile-form" novalidate>
+    <div class="field">
+      <label class="field-label" for="birthDate">생년월일 <span class="req">필수</span></label>
+      <input class="input" id="birthDate" type="date" value="${esc(d.birthDate || '')}" max="${TODAY}">
+      ${age != null ? `<span class="help">만 ${age}세로 계산해요</span>` : ''}
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="ansanMoveInDate">안산시 전입일 ${reg ? '<span class="req">필수</span>' : ''}</label>
+      <p class="help">주민등록상 안산으로 주소를 옮긴 날이에요. 안산 안에서 이사한 날이 아니에요.</p>
+      <input class="input" id="ansanMoveInDate" type="date" value="${esc(d.ansanMoveInDate || '')}" max="${TODAY}" ${reg ? '' : 'disabled'}>
+      ${reg && d.ansanMoveInDate ? `<span class="ok">${icon('check')}안산 거주 ${ym(yearsBetween(d.ansanMoveInDate, TODAY))}째예요</span>` : ''}
+      <label class="check-row" for="noMoveIn"><input id="noMoveIn" type="checkbox" ${reg ? '' : 'checked'}>아직 전입신고를 안 했어요</label>
+    </div>
+
+    ${reg ? `
+    <div class="field">
+      <label class="field-label" for="ansanPriorYears">이번 전입 전 안산 거주 기간 <span class="opt">선택</span></label>
+      <p class="help">예전에 안산에 주민등록을 둔 적이 있다면 합산 연수를 적어 주세요. 장학금의 '합산 10년' 조건에 쓰여요.</p>
+      <input class="input" id="ansanPriorYears" type="number" min="0" step="0.5" inputmode="decimal" value="${esc(d.ansanPriorYears || 0)}">
+    </div>
+    <div class="field">
+      <span class="field-label">경기도 거주 <span class="opt">선택</span></span>
+      <label class="check-row" for="gyeonggiBeforeAnsan"><input id="gyeonggiBeforeAnsan" type="checkbox" ${d.gyeonggiBeforeAnsan ? 'checked' : ''}>안산 오기 직전에 경기도 다른 시·군에 살았어요</label>
+      ${d.gyeonggiBeforeAnsan ? `<label class="help" for="gyeonggiSinceDate">경기도로 처음 전입한 날 (청년기본소득 판정에 쓰여요)</label>
+        <input class="input" id="gyeonggiSinceDate" type="date" value="${esc(d.gyeonggiSinceDate || '')}" max="${TODAY}">` : ''}
+    </div>` : `
+    <div class="field">
+      <span class="field-label" id="zone-label">안산에 다니는 곳 <span class="opt">선택</span></span>
+      <p class="help">주민등록이 없어도 안산의 학교·직장을 인정해 주는 사업이 있어요.</p>
+      <div class="seg" role="group" aria-labelledby="zone-label">${zoneBtn('학교', '안산 소재 학교')}${zoneBtn('직장', '안산 소재 직장')}${zoneBtn('사업장', '안산 사업장')}</div>
+    </div>
+    <div class="field">
+      <span class="field-label" id="region-label">지금 주민등록 주소 <span class="opt">선택</span></span>
+      <div class="seg" role="group" aria-labelledby="region-label">${regionBtn('gyeonggi', '경기도')}${regionBtn('other', '경기도 밖')}${regionBtn('', '모름')}</div>
+    </div>`}
+    ${state.error ? `<p class="err" role="alert">${esc(state.error)}</p>` : ''}
+  </form>
+
+  <div class="examples"><span>예시로 채우기</span>
+    <button type="button" data-example="dohyun">도현 (전입 완료)</button>
+    <button type="button" data-example="noreg">전입 안 한 ERICA생</button>
+  </div>
+  <div class="privacy">${icon('lock', 18)}<span>입력한 정보는 이 기기의 브라우저에만 저장돼요. 로그인도, 서버 저장도 없어요.</span></div>
+  <div class="cta">
+    <button type="button" class="btn btn-primary" id="submit">받을 수 있는 혜택 보기</button>
+    <p>공고문 원문 조건으로 판정해요. 최종 선정은 담당 기관이 확인해요.</p>
+  </div>`;
+}
+
+/* ---------- 라우팅 · 이벤트 ---------- */
+const view = document.getElementById('view');
+function route() {
+  const h = location.hash.slice(1) || 'results';
+  let tab = 'results';
+  if (h.startsWith('p-')) view.innerHTML = viewDetail(h.slice(2));
+  else if (h === 'calendar') { tab = 'calendar'; view.innerHTML = viewCalendar(); }
+  else if (h === 'input') { tab = 'input'; view.innerHTML = viewInput(); }
+  else view.innerHTML = viewResults();
+  if (h !== 'input') { state.draft = null; state.error = ''; }
+  document.querySelectorAll('nav.tabs a').forEach((a) => {
+    if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+function rerenderInput() { const y = window.scrollY; view.innerHTML = viewInput(); window.scrollTo(0, y); }
+
+view.addEventListener('click', (e) => {
+  const f = e.target.closest('[data-filter]');
+  if (f) { state.filter = f.dataset.filter; view.innerHTML = viewResults(); return; }
+  const d = state.draft;
+  const z = e.target.closest('[data-zone]');
+  if (z && d) { const v = z.dataset.zone; d.lifeZones = d.lifeZones.includes(v) ? d.lifeZones.filter((x) => x !== v) : [...d.lifeZones, v]; rerenderInput(); return; }
+  const rg = e.target.closest('[data-region]');
+  if (rg && d) { d.currentRegion = rg.dataset.region || undefined; rerenderInput(); return; }
+  const ex = e.target.closest('[data-example]');
+  if (ex) { state.draft = JSON.parse(JSON.stringify(EXAMPLES[ex.dataset.example])); state.error = ''; rerenderInput(); return; }
+  if (e.target.closest('#submit') && d) {
+    if (!d.birthDate) { state.error = '생년월일을 입력해 주세요.'; rerenderInput(); return; }
+    if (d.ansanRegistered && !d.ansanMoveInDate) { state.error = '안산시 전입일을 입력하거나 "아직 전입신고를 안 했어요"를 선택해 주세요.'; rerenderInput(); return; }
+    if (d.ansanRegistered && d.gyeonggiBeforeAnsan && d.gyeonggiSinceDate && d.gyeonggiSinceDate > d.ansanMoveInDate) { state.error = '경기도 전입일은 안산 전입일보다 빠르거나 같아야 해요.'; rerenderInput(); return; }
+    const clean = d.ansanRegistered
+      ? { birthDate: d.birthDate, ansanRegistered: true, ansanMoveInDate: d.ansanMoveInDate, ansanPriorYears: Number(d.ansanPriorYears) || 0,
+          gyeonggiBeforeAnsan: !!d.gyeonggiBeforeAnsan, gyeonggiSinceDate: d.gyeonggiBeforeAnsan ? d.gyeonggiSinceDate : undefined, lifeZones: d.lifeZones || [] }
+      : { birthDate: d.birthDate, ansanRegistered: false, currentRegion: d.currentRegion, lifeZones: d.lifeZones || [] };
+    state.profile = clean; state.isExample = false; state.filter = 'all';
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(clean)); } catch (err) { /* 저장 못 해도 이번 화면에서는 동작 */ }
+    location.hash = 'results';
+  }
+});
+
+view.addEventListener('change', (e) => {
+  const d = state.draft; if (!d) return;
+  const t = e.target;
+  if (t.id === 'birthDate') d.birthDate = t.value;
+  else if (t.id === 'ansanMoveInDate') d.ansanMoveInDate = t.value;
+  else if (t.id === 'noMoveIn') { d.ansanRegistered = !t.checked; if (!d.ansanRegistered) d.ansanMoveInDate = d.ansanMoveInDate || ''; }
+  else if (t.id === 'ansanPriorYears') d.ansanPriorYears = t.value;
+  else if (t.id === 'gyeonggiBeforeAnsan') d.gyeonggiBeforeAnsan = t.checked;
+  else if (t.id === 'gyeonggiSinceDate') d.gyeonggiSinceDate = t.value;
+  else return;
+  state.error = '';
+  rerenderInput();
+});
+
+route();
+</script>
+</body>
+</html>
