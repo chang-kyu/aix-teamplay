@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>안산 청년 혜택 알리미</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* 10/28 UI 초안 팔레트 그대로 · 한 열짜리 모바일 화면 + 하단 탭 */
+  --bg: #F4F6F5; --surface: #FFFFFF; --ink: #15201D; --ink2: #3D4743; --muted: #5A6662;
+  --line: #E1E6E4; --line2: #EEF1F0; --field: #CBD3D0; --chip: #F1F3F2;
+  --accent: #2440B8; --accent-hover: #1A2F8A; --accent-bg: #EDF0FC;
+  --good: #0A6650; --good-bg: #E2F2EC;
+  --soon: #8A4A00; --soon-bar: #D98A1F; --soon-bg: #FCEFD9; --soon-line: #E8C48C;
+  --check: #4B5450; --check-bg: #ECEFEE;
+  --no: #8C3B2E; --no-bg: #F7E8E4;
+  --urgent: #C2410C;
+  --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-text-size-adjust: 100%; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-hover); }
+button, input, select { font-family: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+svg.i { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+h1, h2, h3 { text-wrap: balance; }
+
+.app { max-width: 440px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+.top { display: flex; align-items: center; gap: 10px; padding: 14px 20px; }
+.logo { width: 32px; height: 32px; border-radius: 9px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.brand { display: flex; flex-direction: column; line-height: 1.25; }
+.brand b { font-size: 16px; }
+.brand span { font-size: 12px; color: var(--muted); }
+main { flex: 1; padding-bottom: 96px; }
+
+.panel { margin: 0 16px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; gap: 8px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; }
+.panel-head span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.panel-head a { font-size: 13px; font-weight: 600; text-decoration: none; padding: 8px 4px; margin: -8px -4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 5px 10px; border-radius: 999px; background: var(--chip); font-size: 13px; }
+.note { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 0; }
+
+.intro { padding: 22px 20px 12px; display: flex; flex-direction: column; gap: 6px; }
+.intro h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.intro p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.eyebrow { font-size: 13px; font-weight: 600; color: var(--accent); }
+
+.banner { margin: 4px 16px 0; padding: 14px 16px; border-radius: 14px; background: var(--accent-bg); border: 1px solid #C9D2F5; display: flex; gap: 12px; align-items: center; }
+.banner b { font-size: 26px; font-family: var(--mono); color: var(--accent); font-variant-numeric: tabular-nums; }
+.banner p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink2); }
+.banner p strong { color: var(--ink); }
+
+.filters { display: flex; gap: 8px; padding: 12px 20px 4px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.filters button { flex: none; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--field); background: var(--surface); font-size: 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+.filters .n { font-family: var(--mono); font-size: 12.5px; opacity: .75; }
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.group-title { margin: 0; padding: 20px 20px 10px; font-size: 15px; font-weight: 700; display: flex; align-items: baseline; gap: 8px; }
+.group-title small { font-size: 13px; font-weight: 500; color: var(--muted); }
+.list { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+
+.card { padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; gap: 8px; color: var(--ink); text-decoration: none; }
+.card:hover { border-color: var(--field); color: var(--ink); }
+.card.soon { border: 1.5px solid var(--soon-line); }
+.card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card h3 { margin: 0; font-size: 16px; line-height: 1.45; font-weight: 600; }
+.card .benefit { margin: 0; font-size: 14px; color: var(--ink2); line-height: 1.5; }
+.card .why { margin: 0; padding-top: 10px; border-top: 1px solid var(--line2); font-size: 13px; line-height: 1.5; color: var(--muted); display: flex; gap: 6px; }
+.card .why svg { margin-top: 3px; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.b-good { background: var(--good-bg); color: var(--good); }
+.b-move { background: var(--accent-bg); color: var(--accent); }
+.b-soon { background: var(--soon-bg); color: var(--soon); }
+.b-check { background: var(--check-bg); color: var(--check); }
+.b-no { background: var(--no-bg); color: var(--no); }
+.dday { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--line2); font-family: var(--mono); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.dday.urgent { background: var(--urgent); color: #fff; }
+.dday.muted { font-family: var(--font); font-weight: 500; color: var(--check); }
+
+.progress { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line2); }
+.progress-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink2); }
+.progress-row b { font-family: var(--mono); font-weight: 600; color: var(--soon); }
+.bar { height: 8px; border-radius: 999px; background: var(--line2); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 999px; background: var(--soon-bar); }
+.more { display: flex; justify-content: flex-end; align-items: center; gap: 2px; font-size: 13px; font-weight: 600; color: var(--accent); }
+
+details.fold { margin: 24px 16px 0; padding: 0 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+details.fold summary { min-height: 52px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; cursor: pointer; list-style: none; }
+details.fold summary::-webkit-details-marker { display: none; }
+details.fold summary small { font-size: 13px; font-weight: 500; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.fold-row { display: block; padding: 12px 0; border-top: 1px solid var(--line2); text-decoration: none; color: var(--ink); }
+.fold-row b { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.fold-row span { font-size: 13px; line-height: 1.5; color: var(--no); display: flex; gap: 6px; }
+.fold-row span svg { margin-top: 3px; }
+
+/* 상세 */
+.back { display: inline-flex; align-items: center; gap: 4px; margin: 4px 16px 0; padding: 10px 4px; font-size: 14px; font-weight: 600; text-decoration: none; }
+.detail-head { padding: 8px 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+.detail-head h1 { margin: 0; font-size: 22px; line-height: 1.4; letter-spacing: -0.02em; }
+.detail-head p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink2); }
+.sec { margin: 12px 16px 0; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; flex-direction: column; gap: 10px; }
+.sec h2 { margin: 0; font-size: 15px; font-weight: 700; }
+.verdict { font-size: 15px; font-weight: 600; line-height: 1.5; margin: 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.checks li { display: grid; grid-template-columns: 24px 1fr; gap: 8px; padding: 10px 0; border-top: 1px solid var(--line2); }
+.checks li:first-child { border-top: 0; padding-top: 2px; }
+.checks .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
+.checks b { display: block; font-size: 13px; color: var(--muted); font-weight: 600; }
+.checks span { font-size: 14px; line-height: 1.5; }
+.self { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.self li { display: flex; gap: 8px; font-size: 14px; line-height: 1.5; }
+.self li::before { content: ''; flex: none; width: 16px; height: 16px; margin-top: 3px; border: 1.5px solid var(--field); border-radius: 4px; }
+blockquote { margin: 0; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--accent-bg); border-radius: 0 10px 10px 0; font-size: 14px; line-height: 1.6; color: var(--ink2); }
+.kv { display: grid; grid-template-columns: 72px 1fr; gap: 6px 10px; font-size: 14px; line-height: 1.5; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.kv .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.btn { height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 16px; font-weight: 600; text-decoration: none; border: 0; cursor: pointer; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); color: #fff; }
+.btn-ghost { background: var(--surface); color: var(--accent); border: 1.5px solid var(--field); }
+.bonus { padding: 10px 12px; border-radius: 10px; background: var(--soon-bg); color: var(--soon); font-size: 13.5px; line-height: 1.5; }
+.soon-box { padding: 12px; border-radius: 12px; background: var(--chip); font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+
+/* 입력 */
+.form { margin: 0 16px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; display: flex; flex-direction: column; gap: 24px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field-label { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; }
+.req { font-size: 12px; font-weight: 600; color: var(--accent); }
+.opt { font-size: 12px; font-weight: 500; color: var(--muted); }
+.help { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 0; }
+.ok { font-size: 13px; font-weight: 500; color: var(--good); display: flex; align-items: center; gap: 6px; }
+.err { font-size: 13px; font-weight: 500; color: var(--no); }
+.input { height: 52px; padding: 0 14px; border: 1.5px solid var(--field); border-radius: 12px; background: var(--surface); font-size: 16px; width: 100%; }
+.input:focus { border-color: var(--accent); outline: none; }
+.check-row { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; cursor: pointer; }
+.check-row input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.seg button { height: 48px; border-radius: 12px; border: 1.5px solid var(--field); background: var(--surface); font-size: 14px; cursor: pointer; padding: 0 6px; }
+.seg button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.examples { margin: 12px 16px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.examples button { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--field); background: var(--surface); font-size: 13px; cursor: pointer; }
+.privacy { margin: 16px 16px 0; padding: 14px 16px; border-radius: 14px; background: #E9EDEB; display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.55; color: var(--ink2); }
+.cta { padding: 20px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
+.cta p { margin: 0; font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5; }
+
+/* 캘린더 */
+.cal-row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; text-decoration: none; color: var(--ink); }
+.cal-date { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: var(--chip); padding: 8px 0; }
+.cal-date b { font-family: var(--mono); font-size: 17px; }
+.cal-date span { font-size: 11.5px; color: var(--muted); }
+.cal-date.urgent { background: #FBE6DC; }
+.cal-date.urgent b { color: var(--urgent); }
+.cal-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cal-body h3 { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 600; }
+.cal-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.empty { margin: 0 16px; padding: 20px; text-align: center; font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--field); border-radius: 16px; }
+
+nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--line); }
+nav.tabs div { max-width: 440px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 6px 0 10px; }
+nav.tabs a { min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: var(--muted); font-size: 12px; font-weight: 500; }
+nav.tabs a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) { .card, .btn, .filters button { transition: border-color .15s, background .15s; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="logo" aria-hidden="true"><svg class="i" width="18" height="18" viewBox="0 0 16 16"><path d="M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0"/></svg></div>
+    <div class="brand"><b>혜택 알리미</b><span>안산 청년</span></div>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs" aria-label="주 메뉴"><div>
+    <a href="#results" data-tab="results"><svg class="i" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4.5h8M5.5 8h8M5.5 11.5h8"/><path d="M2.5 4.5h.1M2.5 8h.1M2.5 11.5h.1"/></svg>혜택</a>
+    <a href="#calendar" data-tab="calendar"><svg class="i" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>마감 캘린더</a>
+    <a href="#input" data-tab="input"><svg class="i" width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 13.5c.6-2.6 2.6-4 5-4s4.4 1.4 5 4"/></svg>내 조건</a>
+  </div></nav>
+</div>
+
+<script>
+/* ===== 판정 엔진 (code/v3/judge.js 그대로) ===== */
+/**
+ * 안산시 청년 혜택 알리미 — 판정 엔진 v3 (브라우저/Node 공용, 의존성 없음)
+ *
+ * judgeAll(policies, profile, today) → 정책별 결과 배열
+ *   policies : policies_v3.json 의 policies 배열
+ *   profile  : input_schema.json 의 필드로 만든 사용자 입력 객체
+ *   today    : 'YYYY-MM-DD' (생략 시 오늘)
+ *
+ * 판정하는 조건: 거주 요건(R1·R2·R4·R6·R7·R8·R10) + 나이
+ * 판정하지 않는 조건: 소득·취업·학적·주거 → otherConditions 로 "본인 확인" 목록에 표시
+ */
+
+const STATUS = {
+  eligible: '충족',
+  eligible_from: '날짜 이후 충족',
+  eligible_if_move_in: '전입신고하면 충족',
+  check: '확인 필요',
+  ineligible: '미충족',
+};
+
+// ---------- 날짜 유틸 (모두 UTC 기준 'YYYY-MM-DD' 문자열) ----------
+const toDate = (s) => new Date(s + 'T00:00:00Z');
+const fmt = (d) => d.toISOString().slice(0, 10);
+const addYears = (s, n) => {
+  const d = toDate(s);
+  d.setUTCFullYear(d.getUTCFullYear() + n);
+  return fmt(d);
+};
+const addDays = (s, n) => {
+  const d = toDate(s);
+  d.setUTCDate(d.getUTCDate() + Math.round(n));
+  return fmt(d);
+};
+const daysBetween = (a, b) => Math.round((toDate(b) - toDate(a)) / 864e5);
+const yearsBetween = (a, b) => daysBetween(a, b) / 365.25;
+const maxDate = (...ds) => ds.filter(Boolean).sort().at(-1) || null;
+const todayStr = () => fmt(new Date());
+
+// 만 나이
+function ageOn(birth, on) {
+  const b = toDate(birth), d = toDate(on);
+  let age = d.getUTCFullYear() - b.getUTCFullYear();
+  const beforeBirthday =
+    d.getUTCMonth() < b.getUTCMonth() ||
+    (d.getUTCMonth() === b.getUTCMonth() && d.getUTCDate() < b.getUTCDate());
+  return beforeBirthday ? age - 1 : age;
+}
+
+// ---------- 거주 요건 ----------
+// 반환: { state: 'ok'|'from'|'move_in'|'check'|'no', from?, text, hint? }
+function judgeResidence(res, u, today) {
+  const reg = u.ansanRegistered === true;
+  const moveIn = reg ? u.ansanMoveInDate : null;
+  const zones = u.lifeZones || [];
+
+  switch (res.type) {
+    case 'R7':
+      return { state: 'ok', text: '거주 조건 없음' };
+
+    case 'R1': {
+      const note = res.basisAssumed ? ' (원문에 기준일이 없어 신청일 기준으로 가정)' : '';
+      return reg
+        ? { state: 'ok', text: `${res.basis} 기준 안산 주민등록 필요 → 있음${note}` }
+        : { state: 'move_in', text: '안산 주민등록 필요 → 없음', hint: '안산으로 전입신고하면 바로 충족' };
+    }
+
+    case 'R2': {
+      const cont = res.minContinuousYears, cum = res.minCumulativeYears;
+      const need = cum ? `연속 ${cont}년 또는 합산 ${cum}년` : `연속 ${cont}년`;
+      if (!reg) {
+        return { state: 'no', text: `안산 거주기간 ${need} 필요 → 주민등록 없음`,
+                 hint: `전입신고 후 ${cont}년 거주하면 충족` };
+      }
+      const prior = Number(u.ansanPriorYears) || 0;
+      const contYears = yearsBetween(moveIn, today);
+      const contDate = addYears(moveIn, cont);                                  // 연속 요건 충족일
+      const cumDate = cum ? addDays(moveIn, Math.max(0, cum - prior) * 365.25) : null; // 합산 요건 충족일(근사)
+      const okDate = [contDate, cumDate].filter(Boolean).sort()[0];
+      const now = `안산 연속 ${contYears.toFixed(1)}년` + (prior ? ` + 이전 ${prior}년` : '');
+      if (okDate <= today) return { state: 'ok', text: `${need} 필요 → ${now}` };
+      return { state: 'from', from: okDate, text: `${need} 필요 → ${now}`,
+               hint: `${okDate}부터 충족 (그때 공고 기준)` };
+    }
+
+    case 'R4': {
+      if (!reg) {
+        return { state: 'no', text: '안산 주민등록 + 경기도 거주기간 필요 → 안산 주민등록 없음',
+                 hint: '안산 전입 후 경기도 거주 3년이 되면 충족' };
+      }
+      const gStart = u.gyeonggiBeforeAnsan && u.gyeonggiSinceDate ? u.gyeonggiSinceDate : moveIn;
+      const okDate = addYears(gStart, res.minContinuousYears);
+      const now = `경기도 연속 ${yearsBetween(gStart, today).toFixed(1)}년`;
+      const need = `안산 주민등록 + 경기도 연속 ${res.minContinuousYears}년`;
+      if (okDate <= today) return { state: 'ok', text: `${need} 필요 → ${now}` };
+      return { state: 'from', from: okDate, text: `${need} 필요 → ${now}`,
+               hint: `${okDate}부터 거주 요건 충족` };
+    }
+
+    case 'R6': {
+      if (reg) return { state: 'ok', text: '안산 주민등록 있음' };
+      const hit = (res.altZones || []).filter((z) => zones.includes(z));
+      if (hit.length) {
+        return { state: 'ok', text: `주민등록 없어도 안산 소재 ${hit.join('·')}(으)로 인정` };
+      }
+      return { state: 'move_in',
+               text: `안산 주민등록 또는 안산 소재 ${res.altZones.join('·')} 필요 → 없음`,
+               hint: '전입신고하면 충족' };
+    }
+
+    case 'R8': {
+      if (reg) return { state: 'ok', text: '경기도 거주 필요 → 안산(경기도) 주민등록 있음' };
+      if (u.currentRegion === 'gyeonggi') return { state: 'ok', text: '경기도 거주 필요 → 경기도 주민등록 있음' };
+      if (u.currentRegion === 'other') {
+        return { state: 'move_in', text: '경기도 거주 필요 → 경기도 밖 주민등록', hint: '안산(경기도)으로 전입신고하면 충족' };
+      }
+      return { state: 'check', text: '경기도 거주 필요 → 현재 주민등록 지역 미입력', hint: '주민등록 지역을 입력하면 판정돼요' };
+    }
+
+    case 'R10':
+      return reg
+        ? { state: 'no', text: '안산 외 지역 주민등록자만 신청 가능 → 안산 주민등록 있음', hint: '안산 시민은 신청할 수 없는 사업이에요' }
+        : { state: 'ok', text: '안산 외 지역 주민등록자 대상 → 해당' };
+
+    default:
+      return { state: 'check', text: '유형 미분류' };
+  }
+}
+
+// ---------- 나이 ----------
+// 반환: { state: 'ok'|'from'|'no', from?, lastDay?, text, hint? }
+function judgeAge(age, birth, today) {
+  const { min, max } = age;
+  if (min == null && max == null) return { state: 'ok', text: '나이 제한 없음' };
+  const range = min != null && max != null ? (min === max ? `${min}세` : `${min}~${max}세`)
+    : min != null ? `${min}세 이상` : `${max}세 이하`;
+  const now = ageOn(birth, today);
+  const lastDay = max != null ? addDays(addYears(birth, max + 1), -1) : null; // 상한 나이의 마지막 날
+  if (max != null && now > max) {
+    return { state: 'no', text: `만 ${range} → 지금 만 ${now}세`, hint: '나이 상한 초과' };
+  }
+  if (min != null && now < min) {
+    const from = addYears(birth, min);
+    return { state: 'from', from, lastDay, text: `만 ${range} → 지금 만 ${now}세`, hint: `${from}부터 나이 충족` };
+  }
+  return { state: 'ok', lastDay, text: `만 ${range} → 지금 만 ${now}세` };
+}
+
+// ---------- 모집 상태 ----------
+function recruitState(apply, today) {
+  const { start, end, periodText = '' } = apply;
+  if (/종료|완료|중단/.test(periodText) && !(start && end && today <= end)) {
+    return { state: 'closed', label: '모집 종료', note: periodText };
+  }
+  if (start && end) {
+    if (today < start) return { state: 'upcoming', label: `접수 D-${daysBetween(today, start)}`, dday: daysBetween(today, start) };
+    if (today <= end) return { state: 'open', label: `마감 D-${daysBetween(today, end)}`, dday: daysBetween(today, end) };
+    return { state: 'closed', label: '이번 모집 마감', note: periodText };
+  }
+  if (/상시|연중/.test(periodText)) return { state: 'always', label: '상시' };
+  if (start && today >= start) return { state: 'always', label: '상시' };
+  return { state: 'unknown', label: '공고 확인', note: periodText };
+}
+
+// ---------- 거주 가점 ----------
+function bonusNote(bonus, u, today) {
+  if (!bonus) return null;
+  if (!bonus.years || u.ansanRegistered !== true) return bonus.text;
+  const y = yearsBetween(u.ansanMoveInDate, today);
+  const next = bonus.years.find((n) => y < n);
+  const got = bonus.years.filter((n) => y >= n).at(-1);
+  const parts = [got ? `안산 ${got}년 이상 가점 해당` : `가점 기준 미달 (안산 ${y.toFixed(1)}년)`];
+  if (next) parts.push(`${addYears(u.ansanMoveInDate, next)}부터 ${next}년 가점`);
+  return parts.join(' · ');
+}
+
+// ---------- 정책 하나 판정 ----------
+function judgePolicy(p, u, today = todayStr()) {
+  const res = judgeResidence(p.residence, u, today);
+  const age = judgeAge(p.age, u.birthDate, today);
+
+  let status, eligibleFrom = null, hint = '';
+  if (res.state === 'no' || age.state === 'no') {
+    status = 'ineligible';
+    hint = res.state === 'no' ? res.hint : age.hint;
+  } else if (res.state === 'check') {
+    status = 'check';
+    hint = res.hint;
+  } else if (res.state === 'move_in') {
+    status = 'eligible_if_move_in';
+    hint = res.hint + (age.state === 'from' ? ` (나이는 ${age.from}부터 충족)` : '');
+  } else if (res.state === 'from' || age.state === 'from') {
+    const start = maxDate(res.from, age.from);
+    if (age.lastDay && start > age.lastDay) {
+      status = 'ineligible';
+      hint = `${start}에 요건을 채우지만 그때는 나이 상한을 넘어요`;
+    } else {
+      status = 'eligible_from';
+      eligibleFrom = start;
+      hint = `${start}부터 충족`;
+    }
+  } else {
+    status = 'eligible';
+  }
+
+  return {
+    id: p.id,
+    name: p.name,
+    status,
+    statusLabel: status === 'eligible_from' ? `${eligibleFrom}부터 충족` : STATUS[status],
+    eligibleFrom,
+    hint,
+    checks: [
+      { key: 'residence', label: `거주 (${p.residence.type} ${p.residence.label})`, state: res.state, text: res.text },
+      { key: 'age', label: '나이', state: age.state, text: age.text },
+    ],
+    selfCheck: p.otherConditions,          // 본인이 확인해야 하는 조건(판정 안 함)
+    bonus: bonusNote(p.bonus, u, today),
+    recruit: recruitState(p.apply, today),
+    evidence: p.evidence,
+    sourceUrl: p.sourceUrl,
+  };
+}
+
+// ---------- 전체 판정 + 화면용 그룹 ----------
+function judgeAll(policies, u, today = todayStr()) {
+  return policies.map((p) => judgePolicy(p, u, today));
+}
+
+const ORDER = ['eligible', 'eligible_if_move_in', 'eligible_from', 'check', 'ineligible'];
+function groupByStatus(results) {
+  const groups = Object.fromEntries(ORDER.map((s) => [s, []]));
+  results.forEach((r) => groups[r.status].push(r));
+  // 그룹 안에서는 모집 중(마감 임박 순) → 접수 예정 → 상시 → 나머지
+  const rank = (r) => ({ open: 0, upcoming: 1, always: 2, unknown: 3, closed: 4 }[r.recruit.state]);
+  for (const s of ORDER) groups[s].sort((a, b) => rank(a) - rank(b) || (a.recruit.dday ?? 999) - (b.recruit.dday ?? 999));
+  return groups;
+}
+
+
+/* ===== 데이터 (data/v3/policies_v3.json) ===== */
+const DATA = {"version":"v3","asOf":"2026-11-01","count":52,"policies":[{"id":"ANS012","name":"청년인턴 사업","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"공고일","label":"안산 주민등록"},"age":{"min":18,"max":34},"benefit":"시 소속부서 행정사무 보조 4개월 (생활임금 시급 11,710원)","apply":{"start":"2026-07-08","end":"2026-07-16","periodText":"연 2회(1월·7월 모집). 다음 모집 예상: 2027년 1월","url":"https://apply.jobaba.net"},"otherConditions":["미취업"],"bonus":{"text":"안산 거주 3년 이상 / 5년 이상 가점","years":[3,5]},"evidence":"공고일 기준 안산시 주민등록이 되어 있는 18세 이상 34세 이하 미취업 청년 (제2026-1431호 공고문)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001561"},{"id":"ANS013","name":"청년 행정체험 연수","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"공고일","label":"안산 주민등록"},"age":{"min":19,"max":39},"benefit":"방학 중 행정체험 2개월 (최저임금 시급 10,320원 + 교통비)","apply":{"start":"2026-05-27","end":"2026-06-04","periodText":"연 2회(5월·11월 모집). 동계 모집 예상: 2026년 11월","url":"https://apply.jobaba.net"},"otherConditions":["청년 또는 대학생"],"bonus":null,"evidence":"공고일(2026.5.20.)기준 안산시에 주민등록이 되어있는 19~39세 청년 또는 대학생","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001562"},{"id":"ANS014","name":"경기청년 역량강화 기회 지원(구직자 응시료 지원)","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"신청일","label":"안산 주민등록"},"age":{"min":19,"max":39},"benefit":"어학·자격시험 응시료 실비 지원 (1인 연 최대 30만원)","apply":{"start":"2026-09-04","end":"2026-12-04","periodText":"하반기 선착순, 예산 소진 시 조기 종료","url":"https://apply.jobaba.net"},"otherConditions":["응시일 기준 미취업(1년 미만 단기 근로자 포함)"],"bonus":null,"evidence":"거주요건 : 신청일 기준 주민등록상 안산시 거주","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01609"},{"id":"ANS019","name":"청년취업 면접복장 무료대여","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"신청일","basisAssumed":true,"label":"안산 주민등록"},"age":{"min":18,"max":39},"benefit":"면접 정장 일체 무료 대여 (연 3회)","apply":{"start":null,"end":null,"periodText":"상시","url":"https://www.ansan.go.kr/www/common/bbs/selectPageListBbs.do?bbs_code=B0627"},"otherConditions":[],"bonus":null,"evidence":"지원대상 : 안산시 거주 18세 ~ 39세 거주 청년","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001564"},{"id":"ANS030","name":"청년 전·월세보증금 대출이자 지원","category":"주거복지","residence":{"type":"R1","region":"안산시","basis":"신청일","label":"안산 주민등록"},"age":{"min":19,"max":39},"benefit":"보증금 대출잔액 2% 이내 이자 실비 지원 (연 최대 200만원)","apply":{"start":"2026-08-01","end":"2026-08-31","periodText":"매년 8월 신청","url":"https://apply.jobaba.net"},"otherConditions":["무주택, 전용 85㎡ 이하 & 보증금 3억 이하, 1년 이상 이자 납입","가구 기준 중위소득 180% 이하","신청일 기준 전입신고된 안산시 소재 주택만 인정"],"bonus":null,"evidence":"안산시에 주민등록을 둔 19~39세 무주택 청년","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01813"},{"id":"ANS031","name":"청년우대 착한부동산 중개사무소","category":"주거복지","residence":{"type":"R1","region":"안산시","basis":"신청일","basisAssumed":true,"label":"안산 주민등록"},"age":{"min":19,"max":29},"benefit":"참여 중개사무소 중개보수 자율 감면 (최대 6만원)","apply":{"start":"2026-03-05","end":"2026-12-31","periodText":"참여 중개사무소 이용 시","url":null},"otherConditions":["무주택, 1억 이하 전·월세 계약"],"bonus":null,"evidence":"안산시에 주민등록을 둔 19~29세 무주택 청년","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01815"},{"id":"ANS034","name":"안산시 병역의무 이행 청년카드","category":"주거복지","residence":{"type":"R1","region":"안산시","basis":"신청일","basisAssumed":true,"label":"안산 주민등록"},"age":{"min":null,"max":39},"benefit":"시설 수강료·입장료·주차요금 감면","apply":{"start":"2026-01-01","end":null,"periodText":"상시","url":null},"otherConditions":["현역 복무 후 제대군인(보충역 등 제외)"],"bonus":null,"evidence":"신청대상 : 안산시 주민등록 39세이하 현역 복무 후 제대군인","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01814"},{"id":"EXT005","name":"안전대응 일자리사업 참여자 모집(하반기)","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"공고일","label":"안산 주민등록"},"age":{"min":18,"max":null},"benefit":"공공 안전대응 일자리 (주 20시간, 71명)","apply":{"start":"2026-06-08","end":"2026-06-12","periodText":"상·하반기 연 2회(상반기 1월 모집)","url":null},"otherConditions":["가구 기준중위소득 70% 이하, 재산 4억 이하","실업급여 수급자·생계급여 수급권자 제외"],"bonus":null,"evidence":"공고일 현재 만18세 이상 근로능력자 … 가구소득이 기준중위소득의 70%이하이면서 재산이 4억원 이하인 안산 시민","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1673211"},{"id":"EXT006","name":"지역공동체 일자리사업 참여자 모집(하반기)","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"공고일","label":"안산 주민등록"},"age":{"min":18,"max":null},"benefit":"지역공동체 공공일자리 (81명, 시급 10,320원)","apply":{"start":"2026-06-08","end":"2026-06-12","periodText":"상·하반기 연 2회(상반기 1월 모집)","url":null},"otherConditions":["가구 기준중위소득 70% 이하, 재산 4억 이하","고용보험 가입자·사업자등록자 제외"],"bonus":null,"evidence":"공고일 현재 만18세 이상 근로능력자 … 가구소득 기준중위소득 70%이하 … 재산 4억원 이하인 안산 시민","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1673212"},{"id":"EXT007","name":"희망일자리사업 참여자 모집(하반기)","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"공고일","label":"안산 주민등록"},"age":{"min":18,"max":null},"benefit":"공공일자리 (주 20시간)","apply":{"start":"2026-06-08","end":"2026-06-12","periodText":"상·하반기 연 2회(상반기 1월 모집)","url":null},"otherConditions":["가구 기준중위소득 70% 이하, 재산 4억 이하","생계급여 수급권자 제외"],"bonus":null,"evidence":"공고일 현재 안산시에 주민등록이 되어 있고, 사업개시일 기준 만18세 이상인 자 … 기준중위소득의 70%이하 … 재산이 4억원 이하","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1673161"},{"id":"EXT009","name":"경기도 평생교육이용권(청년 유형, 추가모집)","category":"교육일자리","residence":{"type":"R1","region":"안산시","basis":"신청일","label":"안산 주민등록"},"age":{"min":19,"max":39},"benefit":"평생교육 강좌 수강료·교재비 포인트 (1인 35만원)","apply":{"start":"2026-09-14","end":"2026-09-28","periodText":"연 1회만 선정 가능","url":null},"otherConditions":["기초·차상위 우선 선정, 남는 인원은 소득 무관 무작위 추첨"],"bonus":null,"evidence":"신청일 기준 안산시에 주민등록상 주소를 둔 19세 이상 성인 / 청년 유형 19세~39세(1986.1.1.~2007.12.31. 출생)","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1682678"},{"id":"EXT018","name":"여성안심패키지 지원","category":"주거복지","residence":{"type":"R1","region":"안산시","basis":"공고일","label":"안산 주민등록"},"age":{"min":null,"max":null},"benefit":"스마트 초인종·문열림센서·비상벨·호신용 스프레이 (42가구)","apply":{"start":"2026-04-20","end":"2026-05-01","periodText":"","url":"https://gg24.gg.go.kr"},"otherConditions":["여성 1인 가구·한부모가정·범죄 피해 여성 가구·여성 가구","전세환산액(보증금+월세×100) 또는 공시가격 3억 이하"],"bonus":null,"evidence":"(4.)8. 기준 안산시에 주민등록을 두고 전세환산액 … 3억원 이하 거주자 중 여성 1인 가구·한부모가정·범죄 피해 여성 가구·여성 가구","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1669037"},{"id":"EXT021","name":"문화관광해설사 신규 양성과정","category":"문화예술","residence":{"type":"R1","region":"안산시","basis":"신청일","basisAssumed":true,"label":"안산 주민등록"},"age":{"min":null,"max":null},"benefit":"문화관광해설사 양성교육 후 해설 자원봉사 (2년 이상 활동)","apply":{"start":"2026-02-26","end":"2026-03-12","periodText":"","url":null},"otherConditions":[],"bonus":null,"evidence":"안산시 관내에 주민등록을 두고 거주하는 사람","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1664905"},{"id":"ANS026","name":"청년 창업·취업 학원비 지원","category":"교육일자리","residence":{"type":"R2","region":"안산시","basis":"공고일","minContinuousYears":3,"minCumulativeYears":10,"label":"안산 거주기간"},"age":{"min":18,"max":39},"benefit":"직업훈련 학원 수강료 본인부담금 지원 (1인 200만원 이내, 5명)","apply":{"start":"2026-03-30","end":"2026-04-10","periodText":"2026 모집 종료","url":null},"otherConditions":["미취업(직업훈련 학원 수강)"],"bonus":null,"evidence":"공고일 기준 안산시에 3년 이상 주민등록을 두고 거주하거나 합산 10년 이상 주민등록을 두고 거주","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01720"},{"id":"ANS044","name":"안산꿈키움(대학) 장학금","category":"주거복지","residence":{"type":"R2","region":"안산시","basis":"공고일","minContinuousYears":3,"minCumulativeYears":10,"label":"안산 거주기간"},"age":{"min":null,"max":29},"benefit":"등록금성 장학금 (연 200만원 이내, 200명)","apply":{"start":"2026-08-31","end":"2026-09-11","periodText":"예정 일정","url":null},"otherConditions":["국내 대학 재학생(직전학기 90점 이상, 휴학생 제외)"],"bonus":null,"evidence":"공고일 기준 안산시에 3년 이상 주민등록을 두고 거주하거나 합산 10년 이상 주민등록을 두고 거주","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01717"},{"id":"ANS045","name":"지역대학진학 장학금","category":"주거복지","residence":{"type":"R2","region":"안산시","basis":"공고일","minContinuousYears":3,"minCumulativeYears":10,"label":"안산 거주기간"},"age":{"min":null,"max":29},"benefit":"등록금성 장학금 (연 200만원 이내, 50명)","apply":{"start":"2026-03-30","end":"2026-04-10","periodText":"2026 모집 종료","url":null},"otherConditions":["관내 대학(한양대 ERICA 등) 신입·재학생"],"bonus":null,"evidence":"공고일 기준 안산시에 3년 이상 주민등록을 두고 거주하거나 합산 10년 이상 주민등록을 두고 거주","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01718"},{"id":"ANS046","name":"산업체 노동자 장학금","category":"주거복지","residence":{"type":"R2","region":"안산시","basis":"공고일","minContinuousYears":3,"minCumulativeYears":10,"label":"안산 거주기간"},"age":{"min":null,"max":34},"benefit":"등록금성 장학금 (연 200만원 이내, 5명)","apply":{"start":"2026-03-30","end":"2026-04-10","periodText":"2026 모집 종료","url":null},"otherConditions":["경기도 내 산업체 6개월 이상 재직","협약 대학 재학"],"bonus":null,"evidence":"공고일 기준 안산시에 3년 이상 주민등록을 두고 거주하거나 합산 10년 이상 주민등록을 두고 거주","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01719"},{"id":"ANS047","name":"산단노동자 자녀 장학금","category":"주거복지","residence":{"type":"R2","region":"안산시","basis":"공고일","minContinuousYears":3,"minCumulativeYears":10,"label":"안산 거주기간"},"age":{"min":null,"max":29},"benefit":"등록금성 장학금 (연 200만원 이내, 25명)","apply":{"start":"2026-08-31","end":"2026-09-11","periodText":"예정 일정","url":null},"otherConditions":["국내 대학 재학생","부모가 안산 산업단지 1년 이상 재직"],"bonus":null,"evidence":"공고일 기준 안산시에 3년 이상 주민등록을 두고 거주하거나 합산 10년 이상 주민등록을 두고 거주","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01721"},{"id":"EXT022","name":"안산시 문화예술진흥기금 지원(개인)","category":"문화예술","residence":{"type":"R2","region":"안산시","basis":"공고일","minContinuousYears":1,"minCumulativeYears":null,"label":"안산 거주기간"},"age":{"min":null,"max":null},"benefit":"문화예술 사업·활동 보조금 (최대 300만원)","apply":{"start":"2026-01-15","end":"2026-02-04","periodText":"매년 1~2월 공모","url":null},"otherConditions":["문화예술 활동 개인·단체"],"bonus":null,"evidence":"공고일 현재 안산시에 … 1년 이상 계속하여 주민등록을 둔 개인","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1660218"},{"id":"ANS032","name":"청년기본소득","category":"주거복지","residence":{"type":"R4","region":"안산시","basis":"신청일","periodRegion":"경기도","minContinuousYears":3,"minCumulativeYears":10,"label":"안산 주민등록 + 경기도 거주기간"},"age":{"min":24,"max":24},"benefit":"지역화폐(다온) 분기 25만원, 최대 100만원","apply":{"start":"2026-11-02","end":"2026-12-01","periodText":"분기별·생년월일별 신청. 4분기는 2001.10.02~2002.10.01생","url":"https://apply.jobaba.net"},"otherConditions":[],"bonus":null,"evidence":"신청일 기준 안산시에 주민등록을 두고 경기도에 최근 3년 이상 계속 거주 또는 합산 10년 이상 주민등록","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001545"},{"id":"ANS001","name":"청년 참여기구 구성ㆍ운영(청년정책위원회·청년활동협의체·온라인청년패널)","category":"참여권리","residence":{"type":"R6","region":"안산시","altZones":["직장","학교"],"label":"주민등록 또는 생활권(학교·직장·사업장)"},"age":{"min":19,"max":39},"benefit":"청년정책 심의·제안 참여 (위원회 2년, 협의체 1년, 패널 1년)","apply":{"start":null,"end":null,"periodText":"위원회·협의체·패널별 별도 모집 공고","url":null},"otherConditions":[],"bonus":null,"evidence":"안산시에 거주 또는 생활권(직장・학교 등)을 둔 사람 [*공개모집은 청년(19~39세)만]","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001542"},{"id":"EXT001","name":"예비ㆍ초기 창업 청년을 위한 「청년 창업스쿨」","category":"교육일자리","residence":{"type":"R6","region":"안산시","altZones":["학교","사업장"],"label":"주민등록 또는 생활권(학교·직장·사업장)"},"age":{"min":19,"max":39},"benefit":"온라인마케팅 교육(8회) + 안산e스토어 입점","apply":{"start":"2026-03-10","end":"2026-05-01","periodText":"","url":null},"otherConditions":["예비·초기 창업 청년"],"bonus":null,"evidence":"안산시 주민등록 내국인, 안산시 거소신고 외국인, 안산시에 사업장을 둔 사업자, 안산시 소재 5개 대학 학생","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1665920"},{"id":"EXT012","name":"2026 안산시 규제혁신 아이디어 공모전","category":"참여권리","residence":{"type":"R6","region":"안산시","altZones":["직장"],"label":"주민등록 또는 생활권(학교·직장·사업장)"},"age":{"min":null,"max":null},"benefit":"규제 개선 아이디어 공모 (최우수 50만원)","apply":{"start":"2026-08-03","end":"2026-09-11","periodText":"","url":null},"otherConditions":[],"bonus":null,"evidence":"응모대상: 안산시민, 관내 기업/기관/단체에 소속된 자","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1678913"},{"id":"EXT020","name":"2026 안산 시민DJ","category":"참여권리","residence":{"type":"R6","region":"안산시","altZones":["직장","학교"],"basis":"공고일","label":"주민등록 또는 생활권(학교·직장·사업장)"},"age":{"min":null,"max":null},"benefit":"보이는 라디오(유튜브) 시민DJ 활동 (2026.4~12)","apply":{"start":"2026-03-05","end":"2026-03-20","periodText":"","url":null},"otherConditions":[],"bonus":null,"evidence":"공고일 현재 안산시에 주민등록이 되어 있거나 안산시 소재 직장 또는 학교에 재직・재학 중인 자","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1665534"},{"id":"ANS033","name":"청년 노동자 통장","category":"주거복지","residence":{"type":"R8","region":"경기도","label":"경기도 거주"},"age":{"min":19,"max":39},"benefit":"월 10만원 저축 시 만기 480만원 + 지역화폐 100만원","apply":{"start":null,"end":null,"periodText":"2026. 8. 예정","url":"https://account.ggwf.or.kr"},"otherConditions":["근로 중(근로 유형 무관)","기준 중위소득 120% 이하"],"bonus":null,"evidence":"사업대상: 도내 거주, 기준 중위소득 120% 이하인 19~39세 청년 노동자","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01705"},{"id":"EXT019","name":"2026 안산에서 살아보기","category":"문화예술","residence":{"type":"R10","excludeRegion":"안산시","basis":"공고일","label":"안산 외 거주"},"age":{"min":19,"max":null},"benefit":"안산 체류 여행 숙박비·체험비 실비 지원 (1인 최대 16만원 ~ 4인팀 46만원)","apply":{"start":"2026-04-01","end":"2026-04-17","periodText":"여행기간 2026-05-01~11-30","url":null},"otherConditions":[],"bonus":null,"evidence":"만 19세 이상(공고일 기준 주민등록상 안산시 외 타시군 거주자)","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1666698"},{"id":"ANS006","name":"대학생 아이디어 공모전","category":"참여권리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":39},"benefit":"시정 아이디어 공모, 6팀 시상","apply":{"start":null,"end":null,"periodText":"2026. 5. ~ 10.","url":null},"otherConditions":["대학생(휴학생·대학원생 포함)"],"bonus":null,"evidence":"응모자격 : 만39세 이하의 (전국)대학생","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01835"},{"id":"ANS007","name":"청년도전지원사업","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":18,"max":34},"benefit":"맞춤형 취업 프로그램 + 참여수당 (최대 350만원)","apply":{"start":"2026-01-20","end":"2026-12-31","periodText":"연중 수시(선착순)","url":"https://www.work24.go.kr"},"otherConditions":["구직단념청년(최근 6개월 취·창업·교육·훈련 이력 없음) 등"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01627"},{"id":"ANS008","name":"안산시 청년몰 '소소플래닛' 운영","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":39},"benefit":"청년몰 입점 (임대료 50% 감면, 정착비·교육 지원)","apply":{"start":null,"end":null,"periodText":"입점 모집 시 공고","url":null},"otherConditions":["예비창업자 또는 동종분야 사업자등록 합산 3년 미만"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01607"},{"id":"ANS009","name":"2026 안산 스타트업 창업경진대회","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":39},"benefit":"교육·멘토링, 수상자 사업화자금","apply":{"start":null,"end":null,"periodText":"모집 4~5월, 본선 7월","url":null},"otherConditions":["예비(초기) 청년창업가"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01794"},{"id":"ANS010","name":"안산시 청년큐브 운영","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":39},"benefit":"창업공간(4캠프 60실) 입주, 멘토링·마케팅·투자유치 지원","apply":{"start":null,"end":null,"periodText":"연 1~2회 모집","url":"https://www.youthcube.net"},"otherConditions":["예비창업자 또는 3년 이내 초기 창업자"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001559"},{"id":"ANS017","name":"e스포츠산업 아카데미","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":16,"max":39},"benefit":"e스포츠 산업 교육·대회운영 실습·견학 (40명)","apply":{"start":"2026-06-11","end":"2026-06-25","periodText":"교육 2026-07-04~08-29","url":null},"otherConditions":[],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01716"},{"id":"ANS021","name":"메이커 스페이스 구축ㆍ운영","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"3D프린터·레이저커팅기 등 시제품 제작 공간(창작나래)","apply":{"start":null,"end":null,"periodText":"상시","url":null},"otherConditions":["청소년·창업가·예비창업가"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01713"},{"id":"ANS023","name":"말산업 청년인턴 취업지원","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":19,"max":39},"benefit":"승마장 등 인턴 채용 (10개월, 인건비 지원)","apply":{"start":"2026-02-05","end":"2026-02-13","periodText":"2026 모집 종료(4명)","url":null},"otherConditions":["미취업"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001574"},{"id":"ANS024","name":"청년창업농 영농정착지원","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":18,"max":39},"benefit":"영농정착 지원금 (월 최대 110만원, 3년)","apply":{"start":null,"end":null,"periodText":"","url":null},"otherConditions":["독립영농경영 3년 이하"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001575"},{"id":"ANS025","name":"청년어촌정착지원","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":18,"max":39},"benefit":"어촌정착 지원금 (월 최대 110만원, 3년)","apply":{"start":"2025-11-17","end":null,"periodText":"2026 대상자 모집 공고 2025-11-17, 선정 완료","url":null},"otherConditions":["독립수산업경영 3년 이하"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01714"},{"id":"ANS028","name":"청년월세 지원사업","category":"주거복지","residence":{"type":"R7","label":"거주 무관"},"age":{"min":19,"max":34},"benefit":"월세 현금 지원 (월 최대 20만원, 총 480만원)","apply":{"start":"2026-03-30","end":"2026-05-29","periodText":"2026 모집 종료, 지급 2026.9.~","url":"https://www.bokjiro.go.kr"},"otherConditions":["부모와 별도 거주 무주택","청년가구 중위소득 60% 이하·재산 1.22억 이하 / 원가구 중위소득 100% 이하·재산 4.7억 이하"],"bonus":null,"evidence":"(원문에 지역 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001565"},{"id":"ANS035","name":"청년내일저축계좌","category":"주거복지","residence":{"type":"R7","label":"거주 무관"},"age":{"min":15,"max":39},"benefit":"본인 월 10만원 적립 + 근로소득장려금 월 30만원 (3년)","apply":{"start":null,"end":null,"periodText":"2026년 차상위 초과자 모집 중단","url":null},"otherConditions":["가구 기준 중위소득 50% 이하(차상위 이하)","근로(월 10만원 이상 근로소득)"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001570"},{"id":"ANS036","name":"일상돌봄서비스","category":"주거복지","residence":{"type":"R7","label":"거주 무관"},"age":{"min":13,"max":64},"benefit":"재가돌봄·가사·병원동행·심리지원 등","apply":{"start":null,"end":null,"periodText":"연중","url":null},"otherConditions":["소득 제한 없음(본인부담 차등)"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01795"},{"id":"ANS038","name":"전세보증금반환보증 보증료 지원","category":"주거복지","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"반환보증 보증료 실납부액 지원 (최대 30만원)","apply":{"start":null,"end":null,"periodText":"페이지엔 2025년 신청기간만 기재","url":"https://gg24.gg.go.kr"},"otherConditions":["무주택 임차인, 보증금 3억 이하, 반환보증 가입","청년 연소득 5천만원 이하"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01694"},{"id":"ANS039","name":"자립준비청년 자립정착금","category":"주거복지","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"자립정착금 1,500만원 (2회 분할)","apply":{"start":null,"end":null,"periodText":"","url":null},"otherConditions":["보호종료 자립준비청년"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01796"},{"id":"ANS040","name":"자립준비청년 자립수당","category":"주거복지","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"매월 50만원 현금 (최대 60회)","apply":{"start":null,"end":null,"periodText":"","url":"https://www.bokjiro.go.kr"},"otherConditions":["보호종료 5년 이내"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01797"},{"id":"ANS048","name":"청년 공공주택(매입·전세임대)","category":"주거복지","residence":{"type":"R7","label":"거주 무관"},"age":{"min":19,"max":39},"benefit":"LH 전세임대(1인 1.2억 한도)·매입임대","apply":{"start":null,"end":null,"periodText":"LH 공고 시","url":"https://apply.lh.or.kr"},"otherConditions":["무주택","소득·자산 기준(공고문 참조)"],"bonus":null,"evidence":"(원문에 거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001557"},{"id":"ANS050","name":"e스포츠 페스티벌","category":"문화예술","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"e스포츠 대회·체험","apply":{"start":"2026-08-29","end":"2026-08-29","periodText":"행사일","url":null},"otherConditions":[],"bonus":null,"evidence":"참여대상 : e스포츠를 좋아하는 누구나","sourceUrl":"https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01707"},{"id":"EXT002","name":"제4기 온라인 청년패널","category":"참여권리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":19,"max":39},"benefit":"안산시 정책 설문·제안 참여 (300명), 추첨 모바일 쿠폰","apply":{"start":"2026-04-24","end":"2026-05-08","periodText":"","url":null},"otherConditions":[],"bonus":null,"evidence":"모집대상 : 안산시에 관심이 있는 전국 청년 누구나(19세 ~ 39세)","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1669623"},{"id":"EXT003","name":"2026 안산시 정책 홍보 숏폼 대학생 공모전","category":"참여권리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":39},"benefit":"안산시 정책 홍보 60초 숏폼 공모 (최우수 100만원 ~ 입선 10만원)","apply":{"start":"2026-09-21","end":"2026-10-30","periodText":"기간 연장 공고","url":"https://linkareer.com"},"otherConditions":["대학 재학생(휴학생·대학원생 포함, 졸업생 불가)"],"bonus":null,"evidence":"응모자격 : 만39세 이하 … 대학 … 재학 중인 학생, 휴학생 및 대학원생 참여 가능","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1683959"},{"id":"EXT010","name":"2026 안산시 관광사진 공모전","category":"문화예술","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"안산 관광지 사진 공모 (최우수 100만원, 총 500만원)","apply":{"start":"2026-10-01","end":"2026-10-16","periodText":"","url":null},"otherConditions":[],"bonus":null,"evidence":"공모자격 : 대한민국 국민 누구나(개인 또는 팀)","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1682558"},{"id":"EXT013","name":"2026 안산시 공공데이터·AI 활용 아이디어 공모전","category":"참여권리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"공공데이터·AI 활용 아이디어 공모 (최우수 200만원)","apply":{"start":"2026-06-08","end":"2026-07-10","periodText":"매년 6~7월","url":null},"otherConditions":[],"bonus":null,"evidence":"참가자격 : 전 국민 (개인 또는 3인 이내 팀)","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1673304"},{"id":"EXT014","name":"2025년 기준 경제총조사 조사요원","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"사업체 대상 통계조사 단기 일자리 (203명)","apply":{"start":"2026-04-07","end":"2026-04-17","periodText":"5년 주기 총조사","url":"https://www.ecensus.go.kr"},"otherConditions":[],"bonus":{"text":"대부도 현지인 우선 선발"},"evidence":"(거주 조건 없음) 우대: 대부도 지역 현지인 및 조사 가능자 우선 선발","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1668681"},{"id":"EXT015","name":"2025 농림어업총조사 조사요원","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":18,"max":null},"benefit":"농림어가 대상 통계조사 단기 일자리 (75명, 24일)","apply":{"start":"2025-10-28","end":"2025-11-10","periodText":"5년 주기 총조사","url":"https://www.affcensus.go.kr"},"otherConditions":[],"bonus":null,"evidence":"만 18세이상 사명감과 책임감이 투철한 자 (거주 조건 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1649931"},{"id":"EXT016","name":"2026 지역사회건강조사 조사원","category":"교육일자리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":20,"max":null},"benefit":"보건소 가구 방문 면접조사 단기 일자리 (10명)","apply":{"start":"2026-03-09","end":"2026-03-13","periodText":"매년 3월 모집","url":null},"otherConditions":[],"bonus":{"text":"조사지역 거주자 우대"},"evidence":"연령 : 20세 이상 성인 / 우대: 조사지역 거주자이며 지역실정에 밝은 자","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1665203"},{"id":"EXT024","name":"2025 안산시 SNS 공모전 '안산의 □□을 담다'","category":"참여권리","residence":{"type":"R7","label":"거주 무관"},"age":{"min":null,"max":null},"benefit":"인스타툰·릴스 공모 (최우수 100만원)","apply":{"start":"2025-11-06","end":"2025-11-25","periodText":"연례 공모전(2026 일정 미정)","url":null},"otherConditions":[],"bonus":null,"evidence":"응모자격 : 안산시에 관심 있는 누구나(거주지 제한 없음)","sourceUrl":"https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1654029"}]};
+const POLICIES = DATA.policies;
+
+/* ===== 앱 ===== */
+const TODAY = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); // 한국 날짜
+const STORE_KEY = 'ansan-benefit-profile';
+const EXAMPLES = {
+  dohyun: { birthDate: '2004-03-15', ansanRegistered: true, ansanMoveInDate: '2025-02-02', ansanPriorYears: 0, gyeonggiBeforeAnsan: false, lifeZones: ['학교'] },
+  noreg: { birthDate: '2004-03-15', ansanRegistered: false, currentRegion: 'other', lifeZones: ['학교'] },
+};
+
+const state = { profile: null, isExample: true, filter: 'all', draft: null, error: '' };
+try {
+  const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+  if (saved && saved.birthDate) { state.profile = saved; state.isExample = false; }
+} catch (e) { /* 저장소를 못 쓰는 환경이면 예시로 시작 */ }
+if (!state.profile) state.profile = { ...EXAMPLES.dohyun };
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const md = (s) => s ? `${Number(s.slice(5, 7))}.${s.slice(8, 10).padStart(2, '0')}` : '';
+const dot = (s) => s ? s.replaceAll('-', '.') : '';
+const ym = (years) => { const m = Math.floor(years * 12 + 1e-6); const y = Math.floor(m / 12); return (y ? `${y}년 ` : '') + `${m % 12}개월`; };
+
+const SVG = {
+  check: '<path d="M3 8.5l3 3 7-7"/>',
+  clock: '<circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2.2 1.4"/>',
+  home: '<path d="M2.5 7.5L8 3l5.5 4.5"/><path d="M4 6.5v6.5h8V6.5"/>',
+  q: '<circle cx="8" cy="8" r="6"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4"/><path d="M8 11.4v.1"/>',
+  x: '<path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/>',
+  right: '<path d="M6 3.5L10.5 8 6 12.5"/>',
+  left: '<path d="M10 3.5L5.5 8 10 12.5"/>',
+  down: '<path d="M3.5 6L8 10.5 12.5 6"/>',
+  lock: '<rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>',
+  out: '<path d="M9 3h4v4M13 3L7.5 8.5"/><path d="M11 9.5V13H3V5h3.5"/>',
+  cal: '<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>',
+};
+const icon = (k, size = 14, extra = '') => `<svg class="i" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true" ${extra}>${SVG[k]}</svg>`;
+
+const UI = {
+  eligible: { label: '충족', cls: 'good', icon: 'check', color: 'var(--good)', sub: '지금 조건으로 자격이 돼요' },
+  eligible_if_move_in: { label: '전입하면 충족', cls: 'move', icon: 'home', color: 'var(--accent)', sub: '안산으로 전입신고만 하면 돼요' },
+  eligible_from: { label: '곧 충족', cls: 'soon', icon: 'clock', color: 'var(--soon-bar)', sub: '날짜만 지나면 돼요' },
+  check: { label: '확인필요', cls: 'check', icon: 'q', color: 'var(--check)', sub: '정보가 더 있어야 판정할 수 있어요' },
+  ineligible: { label: '미충족', cls: 'no', icon: 'x', color: 'var(--no)', sub: '' },
+};
+const CHECK_ICON = { ok: ['check', 'good'], from: ['clock', 'soon'], move_in: ['home', 'move'], check: ['q', 'check'], no: ['x', 'no'] };
+
+const badge = (status) => `<span class="badge b-${UI[status].cls}">${icon(UI[status].icon, 12)}${UI[status].label}</span>`;
+function ddayBadge(rc) {
+  if (rc.state === 'open') return `<span class="dday${rc.dday <= 7 ? ' urgent' : ''}">D-${rc.dday}</span>`;
+  if (rc.state === 'upcoming') return `<span class="dday">접수 D-${rc.dday}</span>`;
+  if (rc.state === 'always') return '<span class="dday muted">상시</span>';
+  if (rc.state === 'closed') return '<span class="dday muted">이번 모집 마감</span>';
+  return '<span class="dday muted">공고 확인</span>';
+}
+
+function results() { return judgeAll(POLICIES, state.profile, TODAY); }
+const byId = (id) => POLICIES.find((p) => p.id === id);
+
+// '곧 충족' 진행 막대: 거주 시작일 → 충족일
+function progressOf(r) {
+  const p = byId(r.id), u = state.profile;
+  if (!r.eligibleFrom || !u.ansanRegistered) return null;
+  const res = p.residence;
+  const start = res.type === 'R4' && u.gyeonggiBeforeAnsan && u.gyeonggiSinceDate ? u.gyeonggiSinceDate : u.ansanMoveInDate;
+  const total = daysBetween(start, r.eligibleFrom), done = daysBetween(start, TODAY);
+  const pct = Math.max(0, Math.min(100, Math.round(done / total * 100)));
+  const label = res.minContinuousYears
+    ? `${res.type === 'R4' ? '경기도' : '안산'} 거주 ${ym(yearsBetween(start, TODAY))} / ${res.minContinuousYears}년`
+    : '나이 요건까지';
+  return { pct, label };
+}
+
+function profileChips() {
+  const u = state.profile, chips = [`만 ${ageOn(u.birthDate, TODAY)}세`];
+  if (u.ansanRegistered) {
+    chips.push(`안산 전입 ${ym(yearsBetween(u.ansanMoveInDate, TODAY))}`);
+    if (u.ansanPriorYears > 0) chips.push(`이전 안산 거주 ${u.ansanPriorYears}년`);
+    if (u.gyeonggiBeforeAnsan && u.gyeonggiSinceDate) chips.push(`경기도 전입 ${dot(u.gyeonggiSinceDate)}`);
+  } else {
+    chips.push('안산 전입신고 안 함');
+    if (u.currentRegion) chips.push(u.currentRegion === 'gyeonggi' ? '주소: 경기도' : '주소: 경기도 밖');
+    (u.lifeZones || []).forEach((z) => chips.push(`안산 소재 ${z}`));
+  }
+  return chips.map((c) => `<span class="chip">${esc(c)}</span>`).join('');
+}
+
+function card(r) {
+  const p = byId(r.id), ui = UI[r.status];
+  const why = r.status === 'eligible' ? r.checks[0].text : r.hint;
+  const prog = r.status === 'eligible_from' ? progressOf(r) : null;
+  return `<a class="card${r.status === 'eligible_from' ? ' soon' : ''}" href="#p-${r.id}">
+    <div class="card-top">${badge(r.status)}${ddayBadge(r.recruit)}</div>
+    <h3>${esc(p.name)}</h3>
+    <p class="benefit">${esc(p.benefit)}</p>
+    ${prog ? `<div class="progress"><div class="progress-row"><span>${esc(prog.label)}</span><b>${dot(r.eligibleFrom)} 충족</b></div><div class="bar" aria-hidden="true"><i style="width:${prog.pct}%"></i></div></div>`
+           : `<p class="why">${icon(ui.icon, 14, `style="color:${ui.color}"`)}${esc(why)}</p>`}
+  </a>`;
+}
+
+/* ---------- 결과 화면 ---------- */
+function viewResults() {
+  const groups = groupByStatus(results());
+  const counts = Object.fromEntries(Object.entries(groups).map(([k, v]) => [k, v.length]));
+  const order = ['eligible', 'eligible_if_move_in', 'eligible_from', 'check'];
+  const show = (s) => state.filter === 'all' || state.filter === s;
+  const chipBtn = (key, label, color) => `<button type="button" data-filter="${key}" aria-pressed="${state.filter === key}">${color ? `<span class="dot" style="background:${color}"></span>` : ''}${label}${key !== 'all' ? ` <span class="n">${counts[key]}</span>` : ''}</button>`;
+
+  let html = `
+  <section class="panel" aria-label="내 조건">
+    <div class="panel-head"><span>내 조건</span><a href="#input">수정</a></div>
+    <div class="chips">${profileChips()}</div>
+    ${state.isExample ? '<p class="note">예시 프로필(도현: ERICA 3학년, 2025년 2월 안산 전입)로 보는 중이에요. <a href="#input">내 조건 넣기</a></p>' : ''}
+  </section>
+  <section class="intro">
+    <h1>받을 수 있는 혜택</h1>
+    <p>안산시 청년 사업 ${POLICIES.length}건을 내 조건과 맞춰 봤어요 · ${Number(TODAY.slice(5, 7))}월 ${Number(TODAY.slice(8))}일 기준</p>
+  </section>`;
+
+  if (counts.eligible_if_move_in > 0) {
+    html += `<div class="banner"><b>+${counts.eligible_if_move_in}</b><p><strong>전입신고만 하면 ${counts.eligible_if_move_in}건을 더 받을 수 있어요.</strong> 지금 주소지 대신 안산으로 주민등록을 옮기면 바로 자격이 생겨요.</p></div>`;
+  }
+
+  html += `<div class="filters" role="group" aria-label="판정 결과 필터">
+    ${chipBtn('all', '전체')}
+    ${order.filter((s) => counts[s]).map((s) => chipBtn(s, UI[s].label, UI[s].color)).join('')}
+    ${counts.ineligible ? chipBtn('ineligible', '미충족', UI.ineligible.color) : ''}
+  </div>`;
+
+  for (const s of order) {
+    if (!counts[s] || !show(s)) continue;
+    html += `<h2 class="group-title">${UI[s].label} <small>${UI[s].sub} · ${counts[s]}건</small></h2><div class="list">${groups[s].map(card).join('')}</div>`;
+  }
+  if (counts.ineligible && show('ineligible')) {
+    html += `<details class="fold"${state.filter === 'ineligible' ? ' open' : ''}><summary>미충족 ${counts.ineligible}건<small>왜 안 되는지 보기${icon('down')}</small></summary>
+      ${groups.ineligible.map((r) => `<a class="fold-row" href="#p-${r.id}"><b>${esc(byId(r.id).name)}</b><span>${icon('x')}${esc(r.hint)}</span></a>`).join('')}
+    </details>`;
+  }
+  return html;
+}
+
+/* ---------- 상세 화면 ---------- */
+function gcalLink(p, r) {
+  const rc = r.recruit, isOpen = rc.state === 'open';
+  const day = isOpen ? p.apply.end : p.apply.start;
+  if (!day) return '';
+  const next = addDays(day, 1).replaceAll('-', '');
+  const text = `${isOpen ? '[마감]' : '[접수 시작]'} ${p.name}`;
+  const q = new URLSearchParams({ action: 'TEMPLATE', text, dates: `${day.replaceAll('-', '')}/${next}`, details: `${p.benefit}\n${p.sourceUrl}` });
+  return `https://calendar.google.com/calendar/render?${q}`;
+}
+
+function viewDetail(id) {
+  const p = byId(id);
+  if (!p) return `<a class="back" href="#results">${icon('left', 16)}혜택 목록</a><p class="empty">해당 사업을 찾을 수 없어요.</p>`;
+  const r = judgePolicy(p, state.profile, TODAY), prog = r.status === 'eligible_from' ? progressOf(r) : null;
+  const verdict = {
+    eligible: '거주·나이 조건을 모두 채웠어요.',
+    eligible_if_move_in: r.hint,
+    eligible_from: `${dot(r.eligibleFrom)}부터 자격이 생겨요.`,
+    check: r.hint,
+    ineligible: r.hint,
+  }[r.status];
+  const period = p.apply.start || p.apply.end
+    ? `<span class="num">${dot(p.apply.start) || '?'} ~ ${dot(p.apply.end) || ''}</span>` : '공고 확인';
+  const cal = ['open', 'upcoming'].includes(r.recruit.state) ? gcalLink(p, r) : '';
+
+  return `
+  <a class="back" href="#results">${icon('left', 16)}혜택 목록</a>
+  <section class="detail-head">
+    <div class="card-top">${badge(r.status)}${ddayBadge(r.recruit)}</div>
+    <h1>${esc(p.name)}</h1>
+    <p>${esc(p.benefit)}</p>
+    ${prog ? `<div class="progress" style="border-top:0;padding-top:0"><div class="progress-row"><span>${esc(prog.label)}</span><b>${dot(r.eligibleFrom)} 충족</b></div><div class="bar" aria-hidden="true"><i style="width:${prog.pct}%"></i></div></div>` : ''}
+  </section>
+
+  <section class="sec">
+    <h2>판정 결과</h2>
+    <p class="verdict">${esc(verdict)}</p>
+    <ul class="checks">
+      ${r.checks.map((c) => { const [ic, cls] = CHECK_ICON[c.state]; return `<li><span class="ic b-${cls}">${icon(ic, 13)}</span><div><b>${esc(c.label)}</b><span>${esc(c.text)}</span></div></li>`; }).join('')}
+    </ul>
+    ${r.bonus ? `<div class="bonus">가점 · ${esc(r.bonus)}</div>` : ''}
+  </section>
+
+  ${r.selfCheck.length ? `<section class="sec">
+    <h2>본인이 확인해야 하는 조건</h2>
+    <ul class="self">${r.selfCheck.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+    <p class="note">소득·취업·학적 조건은 아직 판정하지 않아요. 공고문과 비교해 직접 확인해 주세요.</p>
+  </section>` : ''}
+
+  <section class="sec">
+    <h2>공고 원문 근거</h2>
+    <blockquote>${esc(p.evidence)}</blockquote>
+    ${p.residence.basisAssumed ? '<p class="note">원문에 기준일이 없어 신청일 기준으로 판정했어요.</p>' : ''}
+    <a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" style="font-size:14px;font-weight:600;display:inline-flex;gap:4px;align-items:center">안산시청 원문 보기${icon('out')}</a>
+  </section>
+
+  <section class="sec">
+    <h2>신청</h2>
+    <dl class="kv">
+      <dt>접수 기간</dt><dd>${period}</dd>
+      ${p.apply.periodText ? `<dt>안내</dt><dd>${esc(p.apply.periodText)}</dd>` : ''}
+      <dt>분야</dt><dd>${esc(p.category)}</dd>
+    </dl>
+    ${p.apply.url ? `<a class="btn btn-primary" href="${esc(p.apply.url)}" target="_blank" rel="noopener">신청하러 가기${icon('out', 16)}</a>` : ''}
+    ${cal ? `<a class="btn btn-ghost" href="${esc(cal)}" target="_blank" rel="noopener">${icon('cal', 16)}구글 캘린더에 ${r.recruit.state === 'open' ? '마감일' : '접수 시작일'} 넣기</a>` : ''}
+  </section>
+
+  <section class="sec">
+    <h2>궁금한 점 물어보기</h2>
+    <div class="soon-box">"서류는 뭐가 필요해요?" 같은 질문에 공고 원문을 근거로 답하는 기능(RAG)은 다음 단계에서 연결할 예정이에요.</div>
+  </section>`;
+}
+
+/* ---------- 마감 캘린더 ---------- */
+function viewCalendar() {
+  const rs = results().filter((r) => r.status !== 'ineligible' && ['open', 'upcoming'].includes(r.recruit.state));
+  const key = (r) => { const p = byId(r.id); return r.recruit.state === 'open' ? p.apply.end : p.apply.start; };
+  rs.sort((a, b) => key(a).localeCompare(key(b)));
+  const always = results().filter((r) => r.recruit.state === 'always' && ['eligible', 'eligible_if_move_in'].includes(r.status));
+  const row = (r) => {
+    const p = byId(r.id), d = key(r), open = r.recruit.state === 'open';
+    return `<a class="cal-row" href="#p-${r.id}">
+      <div class="cal-date${open && r.recruit.dday <= 7 ? ' urgent' : ''}"><b>${md(d)}</b><span>${open ? '마감' : '접수 시작'}</span></div>
+      <div class="cal-body"><h3>${esc(p.name)}</h3><div class="cal-meta">${badge(r.status)}${ddayBadge(r.recruit)}</div></div>
+    </a>`;
+  };
+  return `
+  <section class="intro"><span class="eyebrow">마감 캘린더</span><h1>놓치면 안 되는 날짜</h1>
+    <p>지금 접수 중이거나 곧 열리는 사업이에요. 미충족은 뺐어요. 상세 화면에서 구글 캘린더에 넣을 수 있어요.</p></section>
+  ${rs.length ? `<div class="list">${rs.map(row).join('')}</div>` : '<p class="empty">지금 접수 중인 사업이 없어요.</p>'}
+  ${always.length ? `<h2 class="group-title">상시 신청 <small>언제든 신청할 수 있어요 · ${always.length}건</small></h2>
+    <div class="list">${always.map((r) => `<a class="cal-row" href="#p-${r.id}"><div class="cal-date"><b>상시</b><span>신청</span></div><div class="cal-body"><h3>${esc(byId(r.id).name)}</h3><div class="cal-meta">${badge(r.status)}</div></div></a>`).join('')}</div>` : ''}`;
+}
+
+/* ---------- 내 조건 입력 ---------- */
+function viewInput() {
+  const d = state.draft || (state.draft = { ...state.profile, lifeZones: [...(state.profile.lifeZones || [])] });
+  const reg = d.ansanRegistered;
+  const age = d.birthDate ? ageOn(d.birthDate, TODAY) : null;
+  const zones = d.lifeZones || [];
+  const zoneBtn = (z, label) => `<button type="button" data-zone="${z}" aria-pressed="${zones.includes(z)}">${label}</button>`;
+  const regionBtn = (v, label) => `<button type="button" data-region="${v}" aria-pressed="${(d.currentRegion || '') === v}">${label}</button>`;
+  return `
+  <section class="intro"><span class="eyebrow">내 조건</span>
+    <h1>받을 수 있는 혜택만<br>골라 드릴게요</h1>
+    <p>생년월일과 안산 전입일만 알려 주면 공고문의 거주·나이 조건과 하나씩 맞춰 볼게요.</p></section>
+
+  <form class="form" id="profile-form" novalidate>
+    <div class="field">
+      <label class="field-label" for="birthDate">생년월일 <span class="req">필수</span></label>
+      <input class="input" id="birthDate" type="date" value="${esc(d.birthDate || '')}" max="${TODAY}">
+      ${age != null ? `<span class="help">만 ${age}세로 계산해요</span>` : ''}
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="ansanMoveInDate">안산시 전입일 ${reg ? '<span class="req">필수</span>' : ''}</label>
+      <p class="help">주민등록상 안산으로 주소를 옮긴 날이에요. 안산 안에서 이사한 날이 아니에요.</p>
+      <input class="input" id="ansanMoveInDate" type="date" value="${esc(d.ansanMoveInDate || '')}" max="${TODAY}" ${reg ? '' : 'disabled'}>
+      ${reg && d.ansanMoveInDate ? `<span class="ok">${icon('check')}안산 거주 ${ym(yearsBetween(d.ansanMoveInDate, TODAY))}째예요</span>` : ''}
+      <label class="check-row" for="noMoveIn"><input id="noMoveIn" type="checkbox" ${reg ? '' : 'checked'}>아직 전입신고를 안 했어요</label>
+    </div>
+
+    ${reg ? `
+    <div class="field">
+      <label class="field-label" for="ansanPriorYears">이번 전입 전 안산 거주 기간 <span class="opt">선택</span></label>
+      <p class="help">예전에 안산에 주민등록을 둔 적이 있다면 합산 연수를 적어 주세요. 장학금의 '합산 10년' 조건에 쓰여요.</p>
+      <input class="input" id="ansanPriorYears" type="number" min="0" step="0.5" inputmode="decimal" value="${esc(d.ansanPriorYears || 0)}">
+    </div>
+    <div class="field">
+      <span class="field-label">경기도 거주 <span class="opt">선택</span></span>
+      <label class="check-row" for="gyeonggiBeforeAnsan"><input id="gyeonggiBeforeAnsan" type="checkbox" ${d.gyeonggiBeforeAnsan ? 'checked' : ''}>안산 오기 직전에 경기도 다른 시·군에 살았어요</label>
+      ${d.gyeonggiBeforeAnsan ? `<label class="help" for="gyeonggiSinceDate">경기도로 처음 전입한 날 (청년기본소득 판정에 쓰여요)</label>
+        <input class="input" id="gyeonggiSinceDate" type="date" value="${esc(d.gyeonggiSinceDate || '')}" max="${TODAY}">` : ''}
+    </div>` : `
+    <div class="field">
+      <span class="field-label" id="zone-label">안산에 다니는 곳 <span class="opt">선택</span></span>
+      <p class="help">주민등록이 없어도 안산의 학교·직장을 인정해 주는 사업이 있어요.</p>
+      <div class="seg" role="group" aria-labelledby="zone-label">${zoneBtn('학교', '안산 소재 학교')}${zoneBtn('직장', '안산 소재 직장')}${zoneBtn('사업장', '안산 사업장')}</div>
+    </div>
+    <div class="field">
+      <span class="field-label" id="region-label">지금 주민등록 주소 <span class="opt">선택</span></span>
+      <div class="seg" role="group" aria-labelledby="region-label">${regionBtn('gyeonggi', '경기도')}${regionBtn('other', '경기도 밖')}${regionBtn('', '모름')}</div>
+    </div>`}
+    ${state.error ? `<p class="err" role="alert">${esc(state.error)}</p>` : ''}
+  </form>
+
+  <div class="examples"><span>예시로 채우기</span>
+    <button type="button" data-example="dohyun">도현 (전입 완료)</button>
+    <button type="button" data-example="noreg">전입 안 한 ERICA생</button>
+  </div>
+  <div class="privacy">${icon('lock', 18)}<span>입력한 정보는 이 기기의 브라우저에만 저장돼요. 로그인도, 서버 저장도 없어요.</span></div>
+  <div class="cta">
+    <button type="button" class="btn btn-primary" id="submit">받을 수 있는 혜택 보기</button>
+    <p>공고문 원문 조건으로 판정해요. 최종 선정은 담당 기관이 확인해요.</p>
+  </div>`;
+}
+
+/* ---------- 라우팅 · 이벤트 ---------- */
+const view = document.getElementById('view');
+function route() {
+  const h = location.hash.slice(1) || 'results';
+  let tab = 'results';
+  if (h.startsWith('p-')) view.innerHTML = viewDetail(h.slice(2));
+  else if (h === 'calendar') { tab = 'calendar'; view.innerHTML = viewCalendar(); }
+  else if (h === 'input') { tab = 'input'; view.innerHTML = viewInput(); }
+  else view.innerHTML = viewResults();
+  if (h !== 'input') { state.draft = null; state.error = ''; }
+  document.querySelectorAll('nav.tabs a').forEach((a) => {
+    if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+function rerenderInput() { const y = window.scrollY; view.innerHTML = viewInput(); window.scrollTo(0, y); }
+
+view.addEventListener('click', (e) => {
+  const f = e.target.closest('[data-filter]');
+  if (f) { state.filter = f.dataset.filter; view.innerHTML = viewResults(); return; }
+  const d = state.draft;
+  const z = e.target.closest('[data-zone]');
+  if (z && d) { const v = z.dataset.zone; d.lifeZones = d.lifeZones.includes(v) ? d.lifeZones.filter((x) => x !== v) : [...d.lifeZones, v]; rerenderInput(); return; }
+  const rg = e.target.closest('[data-region]');
+  if (rg && d) { d.currentRegion = rg.dataset.region || undefined; rerenderInput(); return; }
+  const ex = e.target.closest('[data-example]');
+  if (ex) { state.draft = JSON.parse(JSON.stringify(EXAMPLES[ex.dataset.example])); state.error = ''; rerenderInput(); return; }
+  if (e.target.closest('#submit') && d) {
+    if (!d.birthDate) { state.error = '생년월일을 입력해 주세요.'; rerenderInput(); return; }
+    if (d.ansanRegistered && !d.ansanMoveInDate) { state.error = '안산시 전입일을 입력하거나 "아직 전입신고를 안 했어요"를 선택해 주세요.'; rerenderInput(); return; }
+    if (d.ansanRegistered && d.gyeonggiBeforeAnsan && d.gyeonggiSinceDate && d.gyeonggiSinceDate > d.ansanMoveInDate) { state.error = '경기도 전입일은 안산 전입일보다 빠르거나 같아야 해요.'; rerenderInput(); return; }
+    const clean = d.ansanRegistered
+      ? { birthDate: d.birthDate, ansanRegistered: true, ansanMoveInDate: d.ansanMoveInDate, ansanPriorYears: Number(d.ansanPriorYears) || 0,
+          gyeonggiBeforeAnsan: !!d.gyeonggiBeforeAnsan, gyeonggiSinceDate: d.gyeonggiBeforeAnsan ? d.gyeonggiSinceDate : undefined, lifeZones: d.lifeZones || [] }
+      : { birthDate: d.birthDate, ansanRegistered: false, currentRegion: d.currentRegion, lifeZones: d.lifeZones || [] };
+    state.profile = clean; state.isExample = false; state.filter = 'all';
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(clean)); } catch (err) { /* 저장 못 해도 이번 화면에서는 동작 */ }
+    location.hash = 'results';
+  }
+});
+
+view.addEventListener('change', (e) => {
+  const d = state.draft; if (!d) return;
+  const t = e.target;
+  if (t.id === 'birthDate') d.birthDate = t.value;
+  else if (t.id === 'ansanMoveInDate') d.ansanMoveInDate = t.value;
+  else if (t.id === 'noMoveIn') { d.ansanRegistered = !t.checked; if (!d.ansanRegistered) d.ansanMoveInDate = d.ansanMoveInDate || ''; }
+  else if (t.id === 'ansanPriorYears') d.ansanPriorYears = t.value;
+  else if (t.id === 'gyeonggiBeforeAnsan') d.gyeonggiBeforeAnsan = t.checked;
+  else if (t.id === 'gyeonggiSinceDate') d.gyeonggiSinceDate = t.value;
+  else return;
+  state.error = '';
+  rerenderInput();
+});
+
+route();
+</script>
+</body>
+</html>
