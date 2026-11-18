@@ -10,19 +10,20 @@
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
 <style>
 :root {
-  /* 11/14 디자인 개편: 보라 강조색 하나 + 파스텔 상태색 · 한 열 모바일 화면, 흰 카드 목록, 하단 탭, 오른쪽 아래 AI 버튼 */
+  /* 11/18 색 변경: 대표색 #321A88(딥 퍼플) + 보조색 #36A2C9(블루). 보조색은 흰 배경 글자 대비가 낮아 면·포인트에만 쓰고, 글자는 --secondary-ink */
   --page: #F3F2F8; --bg: #FFFFFF; --soft: #F6F6FA;
   --ink: #17181F; --ink2: #454856; --muted: #6E7281; --faint: #B4B7C3;
   --line: #ECECF3; --field: #D9DAE4;
-  --primary: #6A4DF4; --primary-press: #5639DD; --primary-soft: #EFEBFF; --primary-soft2: #E2DAFF;
-  --hero: linear-gradient(120deg, #5E42E8 0%, #6F55F3 55%, #8A75FA 100%);
+  --primary: #321A88; --primary-press: #26136B; --primary-soft: #EEEBF8; --primary-soft2: #DCD5F1;
+  --secondary: #36A2C9; --secondary-soft: #E3F3F9; --secondary-ink: #17708F;
+  --hero: linear-gradient(120deg, #2A1478 0%, #321A88 40%, #3B47A6 72%, #36A2C9 110%);
   --dark: #1B1E29;
   --good: #0B7A5E; --good-bg: #DDF5EC;
   --soon: #8A5A00; --soon-bg: #FFF2CC; --soon-bar: #F5B83D;
   --check: #4B5263; --check-bg: #EEF0F5;
   --no: #C23B3B; --no-bg: #FDEBEB;
   --urgent: #D93D42;
-  --shadow: 0 2px 10px rgba(40, 30, 110, .07);
+  --shadow: 0 2px 10px rgba(50, 26, 136, .07);
   --font: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif;
   color-scheme: light;
 }
@@ -31,7 +32,7 @@ html, body { margin: 0; background: var(--page); color: var(--ink); font-family:
 body { font-size: 15px; line-height: 1.5; letter-spacing: -0.01em; word-break: keep-all; overflow-wrap: anywhere; }
 a { color: var(--primary); }
 button, input, select { font-family: inherit; color: inherit; letter-spacing: inherit; }
-:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
 [hidden] { display: none !important; }
 svg.i { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 h1, h2, h3 { text-wrap: balance; }
@@ -59,7 +60,7 @@ main { flex: 1; padding-bottom: 150px; }
 .hero-pill { align-self: flex-start; margin-top: 8px; padding: 6px 12px; border-radius: 14px; background: rgba(255, 255, 255, .2); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; max-width: 100%; }
 .hero-pill span::after { content: '/'; margin-left: 8px; opacity: .6; }
 .hero-pill a { color: #fff; font-weight: 700; text-underline-offset: 3px; padding: 4px 2px; margin: -4px 0; }
-.hero-deco { position: absolute; right: -10px; top: -8px; width: 110px; height: 110px; color: #fff; opacity: .18; pointer-events: none; }
+.hero-deco { position: absolute; right: -10px; top: -8px; width: 110px; height: 110px; color: #fff; opacity: .2; pointer-events: none; }
 
 .promo { margin: 12px 20px 0; padding: 16px 18px; border-radius: 16px; background: var(--primary-soft); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 12px; align-items: center; }
 .promo-text { display: flex; flex-direction: column; gap: 2px; }
@@ -109,6 +110,7 @@ main { flex: 1; padding-bottom: 150px; }
 
 .badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .dday { flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dday.next { background: var(--secondary-soft); color: var(--secondary-ink); }
 .dday.urgent { background: var(--urgent); color: #fff; }
 .dday.quiet { background: var(--soft); color: var(--muted); font-weight: 500; }
 
@@ -116,7 +118,7 @@ main { flex: 1; padding-bottom: 150px; }
 .prog-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--ink2); }
 .prog-row b { font-weight: 600; color: var(--soon); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .bar { display: block; height: 8px; border-radius: 999px; background: var(--primary-soft); overflow: hidden; }
-.bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #B7A6FF, var(--primary)); }
+.bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--secondary), var(--primary)); }
 
 details.fold { margin: 24px 20px 0; padding: 0 16px; border-radius: 16px; background: var(--bg); border: 1px solid var(--line); box-shadow: var(--shadow); }
 details.fold summary { min-height: 54px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; cursor: pointer; list-style: none; }
@@ -132,7 +134,7 @@ details.fold summary small { font-size: 13px; font-weight: 400; color: var(--mut
 .sum-label { font-size: 12.5px; color: var(--ink2); }
 .sum strong { font-size: 18px; line-height: 1.45; font-weight: 700; letter-spacing: -0.02em; }
 .sum-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.sum-meta .badge.t-move, .sum-meta .dday:not(.urgent) { background: var(--bg); }
+.sum-meta .badge.t-move, .sum-meta .dday:not(.urgent):not(.next) { background: var(--bg); }
 .segtabs { margin: 14px 20px 0; padding: 4px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); box-shadow: var(--shadow); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 .segtabs button { height: 40px; border: 0; border-radius: 9px; background: transparent; font-size: 14px; color: var(--ink2); cursor: pointer; }
 .segtabs button[aria-selected="true"] { background: var(--primary); color: #fff; font-weight: 600; }
@@ -188,14 +190,16 @@ blockquote b { display: block; margin-bottom: 4px; font-size: 13px; color: var(-
 .seg button[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 600; box-shadow: none; }
 .examples { margin: 20px 20px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
 .examples button { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); box-shadow: var(--shadow); font-size: 13px; cursor: pointer; }
-.privacy { margin: 14px 20px 0; padding: 14px 16px; border-radius: 14px; background: var(--soft); display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.55; color: var(--ink2); }
-.privacy svg { margin-top: 1px; color: var(--primary); }
+.privacy { margin: 14px 20px 0; padding: 14px 16px; border-radius: 14px; background: var(--secondary-soft); display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.55; color: var(--ink2); }
+.privacy svg { margin-top: 1px; color: var(--secondary-ink); }
 
 /* 마감 캘린더 */
 .cal-row { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 12px; align-items: center; padding: 12px 14px 12px 12px; border-radius: 16px; background: var(--bg); border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--ink); text-decoration: none; }
 .cal-date { align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0; border-radius: 12px; background: var(--primary-soft); }
 .cal-date b { font-size: 16px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
 .cal-date span { font-size: 11.5px; color: var(--ink2); }
+.cal-date.next { background: var(--secondary-soft); }
+.cal-date.next b { color: var(--secondary-ink); }
 .cal-date.urgent { background: var(--no-bg); }
 .cal-date.urgent b { color: var(--urgent); }
 .cal-date.quiet { background: var(--soft); }
@@ -212,15 +216,18 @@ nav.tabs a { min-height: 52px; display: flex; flex-direction: column; align-item
 nav.tabs a[aria-current="page"] { color: var(--primary); font-weight: 700; }
 .fab-wrap { position: fixed; bottom: 84px; left: 0; right: 0; z-index: 6; pointer-events: none; }
 .fab-wrap div { max-width: 440px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: flex-end; }
-.fab { pointer-events: auto; width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--hero); color: #fff; font-size: 15px; font-weight: 800; box-shadow: 0 6px 16px rgba(106, 77, 244, .38); cursor: pointer; }
+.fab { pointer-events: auto; width: 56px; height: 56px; border-radius: 50%; border: 0; background: linear-gradient(135deg, #321A88 15%, #3B47A6 55%, #36A2C9 100%); color: #fff; display: grid; place-items: center; box-shadow: 0 6px 16px rgba(50, 26, 136, .36); cursor: pointer; }
+.fab:hover { filter: brightness(1.08); }
+.robot { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.robot .fill { fill: currentColor; stroke: none; }
 .sheet { position: fixed; inset: 0; z-index: 20; background: rgba(23, 20, 46, .45); display: flex; align-items: flex-end; justify-content: center; }
 .sheet-panel { width: 100%; max-width: 440px; max-height: 86vh; overflow-y: auto; padding: 10px 20px 24px; border-radius: 24px 24px 0 0; background: var(--bg); display: flex; flex-direction: column; gap: 14px; }
 .sheet-handle { align-self: center; width: 40px; height: 4px; border-radius: 999px; background: var(--field); }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .sheet-head h2 { margin: 0; font-size: 18px; font-weight: 700; }
 .sheet-close { width: 44px; height: 44px; margin-right: -12px; display: grid; place-items: center; border: 0; border-radius: 12px; background: transparent; cursor: pointer; }
-.bubble { padding: 14px 16px; border-radius: 16px; background: var(--primary-soft); display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; font-size: 14px; line-height: 1.55; }
-.bubble svg { margin-top: 2px; color: var(--primary); }
+.bubble { padding: 14px 16px; border-radius: 16px; background: var(--primary-soft); display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; font-size: 14px; line-height: 1.55; }
+.bubble-ic { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #321A88 15%, #3B47A6 55%, #36A2C9 100%); color: #fff; display: grid; place-items: center; }
 .bubble b { display: block; font-size: 13px; color: var(--primary); }
 .sheet-qs { display: flex; flex-direction: column; gap: 8px; }
 .sheet-qs span { align-self: flex-start; padding: 8px 14px; border-radius: 14px; border: 1px solid var(--line); font-size: 13.5px; color: var(--ink2); }
@@ -240,7 +247,7 @@ nav.tabs a[aria-current="page"] { color: var(--primary); font-weight: 700; }
     <a class="top-btn" id="top-bell" href="#calendar" aria-label="마감 캘린더"><svg class="i" width="22" height="22" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11V7.5a4 4 0 0 1 8 0V11l1 1.5H3z"/><path d="M6.5 14a1.6 1.6 0 0 0 3 0"/></svg><span class="dot" id="bell-dot" hidden></span></a>
   </header>
   <main id="view"></main>
-  <div class="fab-wrap" id="fab-wrap"><div><button type="button" class="fab" id="fab" aria-label="공고문에 물어보기 (준비 중)">AI</button></div></div>
+  <div class="fab-wrap" id="fab-wrap"><div><button type="button" class="fab" id="fab" aria-label="AI 도우미 · 공고문에 물어보기 (준비 중)"></button></div></div>
   <nav class="tabs" aria-label="주 메뉴"><div>
     <a href="#results" data-tab="results"><svg class="i" width="22" height="22" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="6.5" width="11" height="7" rx="1"/><path d="M1.8 4.5h12.4v2H1.8zM8 4.5v9M8 4.5C6.6 4.5 5 3.9 5 2.9c0-1.3 1.8-1.4 3 1.6 1.2-3 3-2.9 3-1.6 0 1-1.6 1.6-3 1.6z"/></svg>혜택</a>
     <a href="#calendar" data-tab="calendar"><svg class="i" width="22" height="22" viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>마감 캘린더</a>
@@ -303,6 +310,14 @@ const SVG = {
   send: '<path d="M8 12.5v-9M4.5 7L8 3.5 11.5 7"/>',
 };
 const icon = (k, size = 14, cls = '') => `<svg class="i${cls ? ' ' + cls : ''}" width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true">${SVG[k]}</svg>`;
+// AI 도우미 로봇 (안테나 · 둥근 얼굴 · 헤드폰 · 웃는 입). 첨부 이미지를 말풍선 없이 벡터로 다시 그림
+const robot = (size = 30) => `<svg class="robot" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M12 6.2V4"/><circle class="fill" cx="12" cy="3" r="1.4"/>
+  <rect x="5" y="6.2" width="14" height="11.3" rx="3.6"/>
+  <path class="fill" d="M4.2 9.4h.8v5H4.2A1.7 1.7 0 0 1 2.5 12.7v-1.6a1.7 1.7 0 0 1 1.7-1.7zM19.8 9.4H19v5h.8a1.7 1.7 0 0 0 1.7-1.7v-1.6a1.7 1.7 0 0 0-1.7-1.7z"/>
+  <circle class="fill" cx="9.3" cy="11.2" r="1.25"/><circle class="fill" cx="14.7" cy="11.2" r="1.25"/>
+  <path d="M10 14.1c1.2.9 2.8.9 4 0"/>
+</svg>`;
 const CAT_ICON = { '교육일자리': 'brief', '주거복지': 'home', '참여권리': 'people', '문화예술': 'star' };
 
 const UI = {
@@ -317,7 +332,7 @@ const CHECK_ICON = { ok: ['check', 'good'], from: ['clock', 'soon'], move_in: ['
 const badge = (status) => `<span class="badge t-${UI[status].cls}">${icon(UI[status].icon, 12)}${UI[status].label}</span>`;
 function ddayBadge(rc) {
   if (rc.state === 'open') return `<span class="dday${rc.dday <= 7 ? ' urgent' : ''}">D-${rc.dday}</span>`;
-  if (rc.state === 'upcoming') return `<span class="dday">접수 D-${rc.dday}</span>`;
+  if (rc.state === 'upcoming') return `<span class="dday next">접수 D-${rc.dday}</span>`;
   if (rc.state === 'always') return '<span class="dday quiet">상시</span>';
   if (rc.state === 'closed') return '<span class="dday quiet">모집 마감</span>';
   return '<span class="dday quiet">공고 확인</span>';
@@ -505,7 +520,7 @@ function viewCalendar() {
   const calRow = (r) => {
     const p = byId(r.id), d = key(r), open = r.recruit.state === 'open';
     return `<a class="cal-row" href="#p-${r.id}">
-      <div class="cal-date${open && r.recruit.dday <= 7 ? ' urgent' : ''}"><b>${md(d)}</b><span>${open ? '마감' : '접수 시작'}</span></div>
+      <div class="cal-date${open ? (r.recruit.dday <= 7 ? ' urgent' : '') : ' next'}"><b>${md(d)}</b><span>${open ? '마감' : '접수 시작'}</span></div>
       <div class="cal-body"><h3>${esc(p.name)}</h3><div class="cal-meta">${badge(r.status)}${ddayBadge(r.recruit)}</div></div>
     </a>`;
   };
@@ -593,6 +608,7 @@ function viewInput() {
 const view = document.getElementById('view');
 const $ = (id) => document.getElementById(id);
 const sheet = $('sheet');
+$('fab').innerHTML = robot(30);
 function route() {
   const h = location.hash.slice(1) || 'results';
   let tab = state.lastList;
@@ -668,7 +684,7 @@ function openSheet() {
   const qs = p ? ['서류는 뭐가 필요해요?', '휴학생도 신청할 수 있어요?', '전입신고는 언제까지 해야 해요?']
                : ['전입신고하면 뭐가 달라져요?', '지금 신청할 수 있는 장학금이 있어요?', '거주 기간은 어떻게 계산해요?'];
   $('sheet-body').innerHTML = `
-    <div class="bubble">${icon('spark', 18)}<div><b>AI 도우미 · 준비 중</b>${p ? `<strong>${esc(p.name)}</strong> 공고문` : '공고문'}을 근거로 질문에 답하는 기능이에요. 판정은 규칙으로 하고, 이 창은 원문을 인용해 답하는 용도(RAG)로 다음 단계에서 연결해요.</div></div>
+    <div class="bubble"><span class="bubble-ic">${robot(22)}</span><div><b>AI 도우미 · 준비 중</b>${p ? `<strong>${esc(p.name)}</strong> 공고문` : '공고문'}을 근거로 질문에 답하는 기능이에요. 판정은 규칙으로 하고, 이 창은 원문을 인용해 답하는 용도(RAG)로 다음 단계에서 연결해요.</div></div>
     <p class="note">이런 질문에 답할 예정이에요</p>
     <div class="sheet-qs">${qs.map((q) => `<span>${esc(q)}</span>`).join('')}</div>
     <div class="sheet-input"><input id="sheet-q" type="text" placeholder="아직 질문을 보낼 수 없어요" aria-label="질문 입력 (준비 중)" disabled><button type="button" aria-label="보내기 (준비 중)" disabled>${icon('send', 18)}</button></div>`;
