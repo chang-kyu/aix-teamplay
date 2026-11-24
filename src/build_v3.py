@@ -316,6 +316,22 @@ BASE_AS_OF = "2026-11-24"
 APPLY_FIELDS = ("name", "category", "benefit", "otherConditions", "bonus", "evidence", "sourceUrl")
 
 
+def complete_residence(res, pid):
+    """새로 추가한 사업의 거주 조건에 판정 엔진·챗봇이 쓰는 칸을 채운다 (원문에 기준일이 없으면 신청일 기준)."""
+    t = res["type"]
+    r = dict(res, label=TYPE_LABEL[t])
+    if t in ("R1", "R2", "R6"):
+        r.setdefault("region", "안산시")
+    if t in ("R1", "R2") and not r.get("basis"):
+        r["basis"], r["basisAssumed"] = "신청일", True
+    if t == "R2":
+        assert r.get("minContinuousYears"), f"추가 사업 {pid}: R2 는 거주 연수(minContinuousYears)가 필요해요"
+        r.setdefault("minCumulativeYears", None)
+    if t == "R6":
+        assert r.get("altZones"), f"추가 사업 {pid}: R6 은 대상 학교·직장(altZones)이 필요해요"
+    return r
+
+
 def apply_overrides(policies, ov):
     """검수에서 승인된 결정(overrides.json)을 원본 52건 위에 덮어쓴다.
     - updates: 기존 사업의 신청기간·출처 등 바뀐 칸만
@@ -346,7 +362,7 @@ def apply_overrides(policies, ov):
         assert a["residence"]["type"] in TYPE_LABEL, f"추가 사업 {a['id']}: 거주 유형 {a['residence']['type']}은 판정 엔진이 모름"
         assert a["id"] not in by_id, f"추가 사업 id 중복: {a['id']}"
         p = {"otherConditions": [], "bonus": None, **a}
-        p["residence"] = dict(a["residence"], label=TYPE_LABEL[a["residence"]["type"]])
+        p["residence"] = complete_residence(a["residence"], a["id"])
         p["apply"] = {"start": None, "end": None, "periodText": "", "url": None, **a["apply"]}
         out.append(p)
         by_id[p["id"]] = p

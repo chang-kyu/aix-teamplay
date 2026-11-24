@@ -247,6 +247,8 @@ def add_ready(item) -> tuple[bool, str]:
         return False, "규칙만으로는 자격조건을 다 읽지 못함"
     if a["residence"]["type"] not in rules.RESIDENCE_TYPES:
         return False, "거주 유형 미정"
+    if a["residence"]["type"] in ("R2", "R6"):
+        return False, "거주 연수나 대상 학교·직장은 사람이 확인해야 함"
     if not (a.get("benefit") or "").strip():
         return False, "혜택 설명 없음"
     ap_ = a["apply"]
