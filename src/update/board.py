@@ -88,7 +88,14 @@ def parse_list(page_html: str) -> list[dict]:
 
 
 def fetch_list(page: int) -> list[dict]:
-    return parse_list(_get(LIST_URL.format(page=page)))
+    html_ = _get(LIST_URL.format(page=page))
+    rows = parse_list(html_)
+    if page == 1 and not rows:
+        # 첫 페이지에 글이 하나도 없으면 정상 목록이 아니다 (해외 접속 차단 안내, 점검 페이지, 화면 구조 변경 등)
+        t = re.search(r"(?is)<title>(.*?)</title>", html_)
+        head = re.sub(r"\s+", " ", re.sub(r"(?s)<[^>]+>", " ", html_))[:150]
+        raise FetchError(f"목록 첫 페이지에 글이 없어요 (받은 글자 {len(html_)}자, 제목: {t.group(1).strip()[:60] if t else '-'}, 앞부분: {head})")
+    return rows
 
 
 def fetch_new_posts(last_seq: int | None, max_pages: int = 10, since: str | None = None) -> list[dict]:
