@@ -1,6 +1,54 @@
 {
   "version": 1,
-  "asOf": null,
-  "updates": {},
-  "decided": {}
+  "asOf": "2026-11-25",
+  "updates": {
+    "ANS001": {
+      "apply": {
+        "start": "2026-11-16",
+        "end": "2026-11-22",
+        "periodText": "접수기간 : 2026. 11. 16.(월) ~ 11. 22.(일)"
+      },
+      "sourceUrl": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1688197",
+      "from": "post-1688197",
+      "at": "2026-11-25",
+      "auto": true
+    },
+    "ANS025": {
+      "apply": {
+        "start": "2026-11-17",
+        "end": "2026-12-04",
+        "periodText": "신청기간 : 2026. 11. 17.(화) ~ 2026. 12. 4.(금)"
+      },
+      "sourceUrl": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1688576",
+      "from": "post-1688576",
+      "at": "2026-11-25",
+      "auto": true
+    }
+  },
+  "decided": {
+    "post-1686961": {
+      "decision": "apply",
+      "at": "2026-11-25",
+      "kind": "update",
+      "policyId": "ANS001",
+      "auto": true,
+      "by": "rules"
+    },
+    "post-1688197": {
+      "decision": "apply",
+      "at": "2026-11-25",
+      "kind": "update",
+      "policyId": "ANS001",
+      "auto": true,
+      "by": "rules"
+    },
+    "post-1688576": {
+      "decision": "apply",
+      "at": "2026-11-25",
+      "kind": "update",
+      "policyId": "ANS025",
+      "auto": true,
+      "by": "rules"
+    }
+  }
 }

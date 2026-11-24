@@ -1,6 +1,6 @@
 {
   "version": "v3",
-  "asOf": "2026-11-24",
+  "asOf": "2026-11-25",
   "count": 52,
   "policies": [
     {
@@ -609,15 +609,15 @@
       },
       "benefit": "청년정책 심의·제안 참여 (위원회 2년, 협의체 1년, 패널 1년)",
       "apply": {
-        "start": null,
-        "end": null,
-        "periodText": "위원회·협의체·패널별 별도 모집 공고",
+        "start": "2026-11-16",
+        "end": "2026-11-22",
+        "periodText": "접수기간 : 2026. 11. 16.(월) ~ 11. 22.(일)",
         "url": null
       },
       "otherConditions": [],
       "bonus": null,
       "evidence": "안산시에 거주 또는 생활권(직장・학교 등)을 둔 사람 [*공개모집은 청년(19~39세)만]",
-      "sourceUrl": "https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001542"
+      "sourceUrl": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1688197"
     },
     {
       "id": "EXT001",
@@ -1008,9 +1008,9 @@
       },
       "benefit": "어촌정착 지원금 (월 최대 110만원, 3년)",
       "apply": {
-        "start": "2025-11-17",
-        "end": null,
-        "periodText": "2026 대상자 모집 공고 2025-11-17, 선정 완료",
+        "start": "2026-11-17",
+        "end": "2026-12-04",
+        "periodText": "신청기간 : 2026. 11. 17.(화) ~ 2026. 12. 4.(금)",
         "url": null
       },
       "otherConditions": [
@@ -1018,7 +1018,7 @@
       ],
       "bonus": null,
       "evidence": "(원문에 거주 조건 없음)",
-      "sourceUrl": "https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=www01714"
+      "sourceUrl": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1688576"
     },
     {
       "id": "ANS028",
