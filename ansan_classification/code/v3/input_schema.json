@@ -1,0 +1,120 @@
+{
+  "version": "v3",
+  "storageKey": "ansan-benefit-profile",
+  "storageNote": "입력값은 서버로 보내지 않고 브라우저 localStorage에만 저장한다 (로그인 없음).",
+  "steps": [
+    {
+      "id": "basic",
+      "title": "기본 정보",
+      "fields": ["birthDate", "ansanRegistered", "ansanMoveInDate"]
+    },
+    {
+      "id": "more",
+      "title": "더 정확하게 보기 (선택)",
+      "fields": ["ansanPriorYears", "gyeonggiBeforeAnsan", "gyeonggiSinceDate", "currentRegion", "lifeZones"]
+    }
+  ],
+  "fields": [
+    {
+      "key": "birthDate",
+      "label": "생년월일",
+      "type": "date",
+      "required": true,
+      "usedFor": ["나이 (모든 정책)"],
+      "help": "만 나이로 계산해요."
+    },
+    {
+      "key": "ansanRegistered",
+      "label": "지금 주민등록상 주소가 안산시인가요?",
+      "type": "boolean",
+      "required": true,
+      "options": [
+        { "value": true, "label": "네, 전입신고 했어요" },
+        { "value": false, "label": "아니요 (자취만 하거나 다른 지역 주소)" }
+      ],
+      "usedFor": ["R1", "R2", "R4", "R6", "R8", "R10"]
+    },
+    {
+      "key": "ansanMoveInDate",
+      "label": "안산시 전입신고일",
+      "type": "date",
+      "required": true,
+      "showIf": { "ansanRegistered": true },
+      "usedFor": ["R2", "R4"],
+      "help": "안산으로 처음 주소를 옮긴 날이에요. 안산 안에서 이사한 날이 아니에요. 정부24 주민등록초본에서 확인할 수 있어요."
+    },
+    {
+      "key": "ansanPriorYears",
+      "label": "이번 전입 전에도 안산에 주민등록을 둔 기간이 있나요? (합산, 년)",
+      "type": "number",
+      "min": 0,
+      "step": 0.5,
+      "default": 0,
+      "required": false,
+      "showIf": { "ansanRegistered": true },
+      "usedFor": ["R2 (합산 10년 조건)"],
+      "help": "예: 어릴 때 안산에서 5년 살았다면 5"
+    },
+    {
+      "key": "gyeonggiBeforeAnsan",
+      "label": "안산으로 오기 바로 전에 경기도의 다른 시·군에 살았나요?",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "showIf": { "ansanRegistered": true },
+      "usedFor": ["R4 (청년기본소득: 경기도 거주기간)"]
+    },
+    {
+      "key": "gyeonggiSinceDate",
+      "label": "경기도로 처음 전입한 날",
+      "type": "date",
+      "required": true,
+      "showIf": { "ansanRegistered": true, "gyeonggiBeforeAnsan": true },
+      "usedFor": ["R4"]
+    },
+    {
+      "key": "currentRegion",
+      "label": "지금 주민등록 주소는 어디인가요?",
+      "type": "select",
+      "required": false,
+      "showIf": { "ansanRegistered": false },
+      "options": [
+        { "value": "gyeonggi", "label": "경기도 (안산 외 시·군)" },
+        { "value": "other", "label": "경기도 밖" }
+      ],
+      "usedFor": ["R8 (경기도 거주)"],
+      "help": "모르면 비워 두세요. 해당 정책은 '확인 필요'로 보여드려요."
+    },
+    {
+      "key": "lifeZones",
+      "label": "안산에 다니는 곳이 있나요? (여러 개 선택)",
+      "type": "multiselect",
+      "required": false,
+      "default": [],
+      "showIf": { "ansanRegistered": false },
+      "options": [
+        { "value": "학교", "label": "안산 소재 학교 재학 (한양대 ERICA 등)" },
+        { "value": "직장", "label": "안산 소재 직장 재직" },
+        { "value": "사업장", "label": "안산에 사업장 보유" }
+      ],
+      "usedFor": ["R6 (생활권 인정)"],
+      "help": "주민등록이 없어도 학교·직장이 안산이면 신청할 수 있는 사업이 있어요."
+    }
+  ],
+  "exampleProfiles": {
+    "dohyun": {
+      "birthDate": "2004-03-15",
+      "ansanRegistered": true,
+      "ansanMoveInDate": "2025-02-02",
+      "ansanPriorYears": 0,
+      "gyeonggiBeforeAnsan": false,
+      "lifeZones": ["학교"]
+    },
+    "noRegistration": {
+      "birthDate": "2004-03-15",
+      "ansanRegistered": false,
+      "currentRegion": "other",
+      "lifeZones": ["학교"]
+    }
+  }
+}
