@@ -1,6 +1,6 @@
 {
   "version": "v3",
-  "asOf": "2026-11-01",
+  "asOf": "2026-11-24",
   "count": 52,
   "policies": [
     {
@@ -723,9 +723,9 @@
       },
       "benefit": "월 10만원 저축 시 만기 480만원 + 지역화폐 100만원",
       "apply": {
-        "start": null,
-        "end": null,
-        "periodText": "2026. 8. 예정",
+        "start": "2026-08-01",
+        "end": "2026-08-31",
+        "periodText": "2026. 8. 예정 (날짜는 안내 문구 기준 추정)",
         "url": "https://account.ggwf.or.kr"
       },
       "otherConditions": [
@@ -776,9 +776,9 @@
       },
       "benefit": "시정 아이디어 공모, 6팀 시상",
       "apply": {
-        "start": null,
-        "end": null,
-        "periodText": "2026. 5. ~ 10.",
+        "start": "2026-05-01",
+        "end": "2026-10-31",
+        "periodText": "2026. 5. ~ 10. (날짜는 안내 문구 기준 추정)",
         "url": null
       },
       "otherConditions": [
@@ -854,9 +854,9 @@
       },
       "benefit": "교육·멘토링, 수상자 사업화자금",
       "apply": {
-        "start": null,
-        "end": null,
-        "periodText": "모집 4~5월, 본선 7월",
+        "start": "2026-04-01",
+        "end": "2026-05-31",
+        "periodText": "모집 4~5월, 본선 7월 (날짜는 안내 문구 기준 추정)",
         "url": null
       },
       "otherConditions": [

@@ -146,15 +146,16 @@ function judgeAge(age, birth, today) {
 }
 
 // ---------- 모집 상태 ----------
+// 11/24: end 만 있는 공고(시작일 미상)도 마감일이 지나면 closed 로 본다
 function recruitState(apply, today) {
   const { start, end, periodText = '' } = apply;
   if (/종료|완료|중단/.test(periodText) && !(start && end && today <= end)) {
     return { state: 'closed', label: '모집 종료', note: periodText };
   }
+  if (end && today > end) return { state: 'closed', label: '이번 모집 마감', note: periodText };
   if (start && end) {
     if (today < start) return { state: 'upcoming', label: `접수 D-${daysBetween(today, start)}`, dday: daysBetween(today, start) };
-    if (today <= end) return { state: 'open', label: `마감 D-${daysBetween(today, end)}`, dday: daysBetween(today, end) };
-    return { state: 'closed', label: '이번 모집 마감', note: periodText };
+    return { state: 'open', label: `마감 D-${daysBetween(today, end)}`, dday: daysBetween(today, end) };
   }
   if (/상시|연중/.test(periodText)) return { state: 'always', label: '상시' };
   if (start && today >= start) return { state: 'always', label: '상시' };
