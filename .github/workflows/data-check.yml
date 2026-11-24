@@ -1,0 +1,133 @@
+# 매일 아침 안산시청 고시·공고를 확인한다.
+#  - 원문으로 확인된 '기간 업데이트'는 main에 바로 반영 (사이트에 자동으로 나감)
+#  - 새 사업은 자격조건까지 자동으로 채워 'data-review' PR(데이터 검수 요청)에 넣음 → Merge 가 최종 승인
+#  - 폐기·확인할 것, 자동으로 다 못 채운 새 사업은 같은 PR에서 사람이 검수
+# 필요한 설정 (한 번만):
+#   Settings → Secrets and variables → Actions
+#     - Secret  LLM_API_KEY   : Open AI Service Hub 개발키 (없으면 규칙만으로 동작)
+#     - Variable LLM_MODEL    : (선택) 기본 exaone-4.0-32b
+#     - Variable LLM_BASE_URL : (선택) 기본 https://open.hasa.re.kr/v1
+#   Settings → Actions → General → Workflow permissions
+#     - "Read and write permissions" + "Allow GitHub Actions to create and approve pull requests" 체크
+name: 데이터 점검 (매일)
+
+on:
+  schedule:
+    - cron: "40 21 * * *"      # 매일 한국 시간 06:40
+  workflow_dispatch:           # Actions 탭에서 'Run workflow'로 바로 실행
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: data-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 검수 중인 PR의 상태 이어받기 (대기열·사람 결정·본 글번호)
+        run: |
+          mkdir -p /tmp/carry
+          cp src/overrides.json /tmp/carry/overrides.json
+          cp src/overrides.new.json /tmp/carry/main_new.json        # main에 이미 Merge된 새 사업
+          if git ls-remote --exit-code --heads origin data-review >/dev/null; then
+            git fetch origin data-review
+            for f in review/queue.json state/seen.json src/overrides.json src/overrides.new.json; do
+              if git show "origin/data-review:$f" > /tmp/carry/part 2>/dev/null; then
+                case "$f" in
+                  src/overrides.json) mv /tmp/carry/part /tmp/carry/overrides.json ;;
+                  src/overrides.new.json) mv /tmp/carry/part /tmp/carry/overrides.new.json ;;
+                  *) mkdir -p "$(dirname "$f")" && mv /tmp/carry/part "$f" ;;
+                esac
+              fi
+            done
+          fi
+
+      - name: 안산시청 고시·공고 확인
+        working-directory: src
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+        run: |
+          cp /tmp/carry/overrides.json overrides.json      # 아직 Merge 안 된 사람 결정도 보고 같은 걸 또 묻지 않게
+          [ -f /tmp/carry/overrides.new.json ] && cp /tmp/carry/overrides.new.json overrides.new.json
+          python build_v3.py
+          extra=""
+          if [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then extra="--check-links"; fi   # 월요일엔 출처 링크도 확인
+          set +e
+          python -m update.check $extra --merged-staged /tmp/carry/main_new.json
+          code=$?
+          set -e
+          if [ $code -eq 2 ]; then
+            echo "::warning::안산시청 사이트를 읽지 못했어요. 해외 서버 접속을 막는 경우일 수 있어요 (docs/12 '사이트를 못 읽을 때' 참고)."
+          elif [ $code -ne 0 ]; then
+            exit $code
+          fi
+
+      - name: 자동 반영(기간 업데이트)을 main에 바로 올리기
+        run: |
+          if git diff --quiet -- src/overrides.auto.json; then echo "자동 반영 없음"; exit 0; fi
+          cp src/overrides.new.json /tmp/carry/overrides.new.json    # 오늘 준비한 새 사업은 PR 쪽으로
+          git show HEAD:src/overrides.json > src/overrides.json     # main에는 Merge된 사람 결정만
+          git show HEAD:src/overrides.new.json > src/overrides.new.json
+          cd src
+          python build_v3.py
+          node test_judge.mjs > /dev/null
+          python -m unittest discover -s update -t . -q
+          python web/build_web.py
+          cp web/index.html ../index.html && cp web/template.html ../template.html
+          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/overrides.auto.json src/policies_v3.json src/ansan_policies_v3.csv index.html template.html
+          git commit -m "신청기간 자동 업데이트 ($(TZ=Asia/Seoul date +%F))"
+          git push origin HEAD:main
+
+      - name: 검수 PR용으로 다시 빌드 + 테스트
+        working-directory: src
+        run: |
+          cp /tmp/carry/overrides.json overrides.json
+          if [ -f /tmp/carry/overrides.new.json ] && git diff --quiet -- overrides.new.json; then
+            cp /tmp/carry/overrides.new.json overrides.new.json
+          fi
+          python build_v3.py
+          node test_judge.mjs > /dev/null
+          python -m unittest discover -s update -t . -q
+          python web/build_web.py
+          cp web/index.html ../index.html
+          cp web/template.html ../template.html
+
+      - name: 검수 PR 만들기 / 갱신
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: data-review
+          base: main
+          title: "데이터 검수 요청"
+          body-path: review/SUMMARY.md
+          commit-message: "데이터 점검 결과 (자동)"
+          labels: data-review
+          add-paths: |
+            review/queue.json
+            review/SUMMARY.md
+            state/seen.json
+            src/overrides.json
+            src/overrides.new.json
+            src/policies_v3.json
+            src/ansan_policies_v3.csv
+            index.html
