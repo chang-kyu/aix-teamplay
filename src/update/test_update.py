@@ -285,5 +285,32 @@ class BuildOverrides(unittest.TestCase):
             build_v3.apply_overrides(base, {"added": [dict(ov["added"][0], residence={"type": "R9"})]})
 
 
+
+class RealHtmlFormat(unittest.TestCase):
+    """실제 안산시청 페이지 형식(작은따옴표 data-field·scope, </br>)을 읽는지. 2026-11-25 실제 HTML에서 잘라 옴."""
+    def test_list(self):
+        rows = board.parse_list((FX / "real_list_snippet.html").read_text(encoding="utf-8"))
+        self.assertEqual([r["seq"] for r in rows], [1689390, 1689398, 1689401])
+        self.assertEqual(rows[1]["title"], "중앙동 주민자치센터 프로그램 강사 모집 공고")
+        self.assertEqual(rows[0]["date"], "2026-11-25")
+        self.assertEqual(rows[2]["dept"], "통합돌봄과")
+
+    def test_detail(self):
+        d = board.parse_detail((FX / "real_detail_snippet.html").read_text(encoding="utf-8"))
+        self.assertEqual(d["title"], "2027년 청년어촌정착지원 사업 대상자 모집 공고")
+        self.assertEqual(d["dept"], "해양수산과")
+        self.assertIn("신청기간 : 2026. 11. 17.(화) ~ 2026. 12. 4.(금)", d["body"])
+        self.assertEqual(d["files"], [{"fileId": "17949338017822MO6IHJ81GPZLK194AEYTUF26",
+                                       "name": "2027년 청년어촌정착지원 사업시행지침(안).hwpx"}])
+
+    def test_empty_first_page_is_error(self):
+        orig = board._get
+        board._get = lambda url, **k: "<html><title>점검 중</title><body>잠시 후</body></html>"
+        try:
+            with self.assertRaises(board.FetchError):
+                board.fetch_new_posts(None, since="2026-10-26")
+        finally:
+            board._get = orig
+
 if __name__ == "__main__":
     unittest.main()

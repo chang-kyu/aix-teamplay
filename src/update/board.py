@@ -49,7 +49,7 @@ def _get(url: str, timeout: int = 20, retries: int = 2) -> str:
 def text_of(fragment: str) -> str:
     """HTML 조각 → 읽을 수 있는 글자. 블록 태그는 줄바꿈으로."""
     s = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", fragment)
-    s = re.sub(r"(?i)<br\s*/?>|</p>|</li>|</tr>|</h\d>|</div>", "\n", s)
+    s = re.sub(r"(?i)</?br\s*/?>|</p>|</li>|</tr>|</h\d>|</div>", "\n", s)
     s = re.sub(r"<[^>]+>", " ", s)
     s = html.unescape(s).replace("\xa0", " ")
     s = re.sub(r"[ \t\r\f\v]+", " ", s)
@@ -58,16 +58,17 @@ def text_of(fragment: str) -> str:
 
 
 # ---------------- 목록 ----------------
-_ROW = re.compile(r"(?is)<tr>(.*?)</tr>")
-_FIELD = lambda name: re.compile(r'(?is)<td[^>]*data-field="%s"[^>]*>(.*?)</td>' % name)
+_ROW = re.compile(r"(?is)<tr[^>]*>(.*?)</tr>")
+# 실제 페이지는 data-field='NO' 처럼 작은따옴표를 쓴다 → 따옴표 종류 상관없이
+_FIELD = lambda name: re.compile(r"""(?is)<td[^>]*data-field=["']%s["'][^>]*>(.*?)</td>""" % name)
 
 
 def parse_list(page_html: str) -> list[dict]:
-    m = re.search(r"(?is)<tbody[^>]*>(.*?)</tbody>", page_html)
-    if not m:
+    bodies = [b for b in re.findall(r"(?is)<tbody[^>]*>(.*?)</tbody>", page_html) if "fnGoDetail" in b]
+    if not bodies:
         return []
     posts = []
-    for row in _ROW.findall(m.group(1)):
+    for row in _ROW.findall(bodies[0]):
         sj = _FIELD("SJ").search(row)
         if not sj:
             continue
@@ -126,14 +127,14 @@ def fetch_new_posts(last_seq: int | None, max_pages: int = 10, since: str | None
 
 # ---------------- 상세 ----------------
 def parse_detail(page_html: str) -> dict:
-    m = re.search(r'(?is)<div class="[^"]*bbs__view[^"]*">(.*)', page_html)
+    m = re.search(r"""(?is)<div class=["'][^"']*bbs__view[^"']*["'][^>]*>(.*)""", page_html)
     view = m.group(1) if m else page_html
     fields = {}
-    for th, td in re.findall(r'(?is)<th[^>]*scope="row"[^>]*>(.*?)</th>\s*<td[^>]*>(.*?)</td>', view):
+    for th, td in re.findall(r"""(?is)<th[^>]*scope=["']row["'][^>]*>(.*?)</th>\s*<td[^>]*>(.*?)</td>""", view):
         fields[text_of(th)] = td
     files = []
     for fid, name in re.findall(
-            r"(?is)fnFileDownLoad\('([^']+)'\).*?<span[^>]*p-icon[^>]*>.*?</span>\s*<span>(.*?)</span>", view):
+            r"""(?is)fnFileDownLoad\(\s*["']([^"']+)["']\s*\).*?<span[^>]*p-icon[^>]*>.*?</span>\s*<span[^>]*>(.*?)</span>""", view):
         files.append({"fileId": fid, "name": text_of(name)})
     return {
         "noticeNo": text_of(fields.get("고시공고번호", "")),
