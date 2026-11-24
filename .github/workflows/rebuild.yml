@@ -13,6 +13,9 @@ on:
 permissions:
   contents: write
 
+env:
+  HF_HOME: /home/runner/.cache/hf     # 검색 모델(ko-sroberta) 내려받는 곳
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,11 +27,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: 검색 모델 캐시 (의미 검색 자료를 다시 만들 때만 씀)
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/hf
+          key: hf-ko-sroberta-transformersjs-4.3.2
 
       - name: 빌드 + 테스트
         working-directory: src
         run: |
           python build_v3.py
+          bash rag/rebuild.sh                     # AI 도우미 자료(CORPUS·EMB)
           node test_judge.mjs > /dev/null
           python -m unittest discover -s update -t . -q
           python web/build_web.py
@@ -39,7 +48,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html template.html src/policies_v3.json src/ansan_policies_v3.csv
+          git add index.html template.html src/policies_v3.json src/ansan_policies_v3.csv src/corpus_v3.json src/embeddings_v3.json src/rag/emb_source.sha256
           if git diff --cached --quiet; then
             echo "바뀐 것 없음"
           else
