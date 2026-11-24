@@ -26,6 +26,7 @@ AI+X 공학융합프로젝트 · 백창욱 팀
 | `src/test_judge.mjs` | 페르소나 테스트 |
 | `src/web/` | 웹 데모 템플릿과 빌드 스크립트 |
 | `docs/` | 판정 규칙·입력 정보·데이터 구조 설계 문서 |
+| `src/update/`, `review/` | 데이터 자동 점검과 검수 화면 (docs/12) |
 
 ## 거주 요건 유형
 
@@ -50,6 +51,19 @@ cp web/index.html ../index.html
 ```
 
 루트의 `index.html`을 커밋하면 1~2분 뒤 데모 주소에 반영됩니다.
+
+## 데이터 자동 점검과 검수
+
+매일 아침 GitHub Actions가 안산시청 고시·공고를 확인합니다. 원문으로 확인된 **기간 업데이트는 자동으로 바로 반영**하고, **새 사업은 자격조건까지 자동으로 채워** "데이터 검수 요청" PR에 넣습니다. 사람은 PR을 Merge 하는 것(최종 승인)만 하면 됩니다.
+빼거나 고칠 것, 폐기·확인 항목이 있을 때만 [검수 화면](https://chang-kyu.github.io/aix-teamplay/review/)에서 고릅니다.
+자세한 흐름과 설정은 [docs/12](docs/12_데이터_갱신_검수_시스템.md)를 보세요.
+
+```bash
+cd src
+python -m update.check                       # 실제 사이트 확인 (LLM_API_KEY 있으면 SLM 분류)
+python -m update.check --fixtures update/fixtures --today 2026-11-24   # 인터넷 없이 시험
+python -m unittest discover -s update -t .   # 테스트
+```
 
 ## 한계
 

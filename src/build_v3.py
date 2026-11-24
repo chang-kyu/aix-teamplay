@@ -312,10 +312,76 @@ def build():
     return policies
 
 
+BASE_AS_OF = "2026-11-24"
+APPLY_FIELDS = ("name", "category", "benefit", "otherConditions", "bonus", "evidence", "sourceUrl")
+
+
+def apply_overrides(policies, ov):
+    """검수에서 승인된 결정(overrides.json)을 원본 52건 위에 덮어쓴다.
+    - updates: 기존 사업의 신청기간·출처 등 바뀐 칸만
+    - retired: 폐기한 사업 id (목록에서 뺌)
+    - added  : 새로 추가한 사업 (원본과 같은 모양)"""
+    retired = set(ov.get("retired", {}))
+    out = [dict(p) for p in policies if p["id"] not in retired]
+    by_id = {p["id"]: p for p in out}
+    for pid, ch in ov.get("updates", {}).items():
+        p = by_id.get(pid)
+        if not p:
+            continue
+        if "apply" in ch:
+            p["apply"] = {**p["apply"], **{k: v for k, v in ch["apply"].items() if k in ("start", "end", "periodText", "url")}}
+        if "age" in ch:
+            p["age"] = {**p["age"], **{k: v for k, v in ch["age"].items() if k in ("min", "max")}}
+        if "residence" in ch:
+            res = {**p["residence"], **ch["residence"]}
+            res["label"] = TYPE_LABEL[res["type"]]
+            p["residence"] = res
+        for k in APPLY_FIELDS:
+            if k in ch:
+                p[k] = ch[k]
+    for a in ov.get("added", []):
+        need = {"id", "name", "category", "residence", "age", "benefit", "apply", "evidence", "sourceUrl"}
+        missing = need - set(a)
+        assert not missing, f"추가 사업 {a.get('id')}에 빠진 칸: {missing}"
+        assert a["residence"]["type"] in TYPE_LABEL, f"추가 사업 {a['id']}: 거주 유형 {a['residence']['type']}은 판정 엔진이 모름"
+        assert a["id"] not in by_id, f"추가 사업 id 중복: {a['id']}"
+        p = {"otherConditions": [], "bonus": None, **a}
+        p["residence"] = dict(a["residence"], label=TYPE_LABEL[a["residence"]["type"]])
+        p["apply"] = {"start": None, "end": None, "periodText": "", "url": None, **a["apply"]}
+        out.append(p)
+        by_id[p["id"]] = p
+    return out
+
+
+def staged_adds(new, ov):
+    """자동으로 준비한 새 사업(overrides.new.json) 중 사람이 '무시'했거나 직접 고쳐 넣은 것은 뺀다."""
+    decided = ov.get("decided", {})
+    human_ids = {a["id"] for a in ov.get("added", [])}
+    keep = []
+    for a in new.get("added", []):
+        if decided.get(a.get("_from"), {}).get("decision") == "ignore" or a["id"] in human_ids:
+            continue
+        keep.append({k: v for k, v in a.items() if not k.startswith("_")})
+    return {"added": keep}
+
+
+def load_overrides(path="overrides.json"):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+
 if __name__ == "__main__":
-    policies = build()
+    # 1) 자동 반영(원문으로 확인된 기간 업데이트) → 2) 사람 검수 결정. 사람 결정이 항상 이긴다.
+    auto = load_overrides("overrides.auto.json")
+    staged = staged_adds(load_overrides("overrides.new.json"), load_overrides())
+    ov = load_overrides()
+    policies = apply_overrides(apply_overrides(apply_overrides(build(), auto), staged), ov)
+    as_of = max(BASE_AS_OF, auto.get("asOf") or BASE_AS_OF, ov.get("asOf") or BASE_AS_OF)
     with open("policies_v3.json", "w", encoding="utf-8") as f:
-        json.dump({"version": "v3", "asOf": "2026-11-24", "count": len(policies),
+        json.dump({"version": "v3", "asOf": as_of, "count": len(policies),
                    "policies": policies}, f, ensure_ascii=False, indent=2)
 
     cols = ["id", "name", "category", "residence_type", "residence_label", "basis", "basis_assumed",
