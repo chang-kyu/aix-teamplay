@@ -1,8 +1,32 @@
 {
   "version": 1,
-  "asOf": null,
-  "updates": {},
+  "asOf": "2026-11-25",
+  "updates": {
+    "ANS013": {
+      "apply": {
+        "start": "2026-11-18",
+        "end": "2026-11-26",
+        "periodText": "연 2회(5월·11월 모집)"
+      },
+      "sourceUrl": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1687885",
+      "from": "post-1687885",
+      "at": "2026-11-25"
+    }
+  },
   "retired": {},
   "added": [],
-  "decided": {}
+  "decided": {
+    "post-1687885": {
+      "decision": "apply",
+      "at": "2026-11-25",
+      "kind": "update",
+      "policyId": "ANS013"
+    },
+    "audit-ANS013-expected-2026-11": {
+      "decision": "keep",
+      "at": "2026-11-25",
+      "kind": "check",
+      "policyId": "ANS013"
+    }
+  }
 }
