@@ -1,0 +1,48 @@
+# 데이터나 판정 코드가 바뀌면(검수 결정 overrides.json을 올렸을 때 포함) 다시 빌드하고 테스트한다.
+# 테스트가 실패하면 빌드 결과를 올리지 않는다 → 잘못된 결정이 사이트에 나가지 않음.
+name: 데이터 다시 빌드
+
+on:
+  push:
+    branches: [main, data-review]
+    paths:
+      - "src/**"
+      - "!src/update/fixtures/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 빌드 + 테스트
+        working-directory: src
+        run: |
+          python build_v3.py
+          node test_judge.mjs > /dev/null
+          python -m unittest discover -s update -t . -q
+          python web/build_web.py
+          cp web/index.html ../index.html
+          cp web/template.html ../template.html
+
+      - name: 바뀐 결과 올리기
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html template.html src/policies_v3.json src/ansan_policies_v3.csv
+          if git diff --cached --quiet; then
+            echo "바뀐 것 없음"
+          else
+            git commit -m "데이터 다시 빌드 (자동)"
+            git push
+          fi
