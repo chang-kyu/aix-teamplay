@@ -24,6 +24,9 @@ concurrency:
   group: data-check
   cancel-in-progress: false
 
+env:
+  HF_HOME: /home/runner/.cache/hf     # 검색 모델(ko-sroberta) 내려받는 곳
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -40,6 +43,11 @@ jobs:
         with:
           node-version: "20"
 
+      - name: 검색 모델 캐시 (의미 검색 자료를 다시 만들 때만 씀)
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/hf
+          key: hf-ko-sroberta-transformersjs-4.3.2
       - name: 검수 중인 PR의 상태 이어받기 (대기열·사람 결정·본 글번호)
         run: |
           mkdir -p /tmp/carry
@@ -88,6 +96,7 @@ jobs:
           git show HEAD:src/overrides.new.json > src/overrides.new.json
           cd src
           python build_v3.py
+          bash rag/rebuild.sh                     # AI 도우미 자료(CORPUS·EMB)
           node test_judge.mjs > /dev/null
           python -m unittest discover -s update -t . -q
           python web/build_web.py
@@ -95,7 +104,7 @@ jobs:
           cd ..
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/overrides.auto.json src/policies_v3.json src/ansan_policies_v3.csv index.html template.html
+          git add src/overrides.auto.json src/policies_v3.json src/ansan_policies_v3.csv src/corpus_v3.json src/embeddings_v3.json src/rag/emb_source.sha256 index.html template.html
           git commit -m "신청기간 자동 업데이트 ($(TZ=Asia/Seoul date +%F))"
           git push origin HEAD:main
 
@@ -107,6 +116,7 @@ jobs:
             cp /tmp/carry/overrides.new.json overrides.new.json
           fi
           python build_v3.py
+          bash rag/rebuild.sh                     # AI 도우미 자료(CORPUS·EMB)
           node test_judge.mjs > /dev/null
           python -m unittest discover -s update -t . -q
           python web/build_web.py
@@ -130,4 +140,7 @@ jobs:
             src/overrides.new.json
             src/policies_v3.json
             src/ansan_policies_v3.csv
+            src/corpus_v3.json
+            src/embeddings_v3.json
+            src/rag/emb_source.sha256
             index.html
