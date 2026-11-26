@@ -868,11 +868,13 @@ const WEBLLM_URL = 'https://esm.run/@mlc-ai/web-llm@0.2.89';
 const TFJS_URL = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2';
 // 브라우저에서 돌릴 소형 모델 후보(WebLLM 0.2.89 기본 목록). 순서·기본값은 비교 실험(rag/slm_compare.ipynb) 결과로 정한다
 const LLM_MODELS = [
-  { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Qwen2.5 1.5B', gb: 1.6 },
-  { id: 'gemma-2-2b-it-q4f16_1-MLC', label: 'Gemma 2 2B', gb: 1.9 },
-  { id: 'Qwen3.5-2B-q4f16_1-MLC', label: 'Qwen3.5 2B', gb: 2.2 },
-  { id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 3B', gb: 2.3 },
-  { id: 'Qwen2.5-3B-Instruct-q4f16_1-MLC', label: 'Qwen2.5 3B', gb: 2.5 },
+  // dl: 처음 한 번 내려받는 양(GB). 2026-11-25 Hugging Face mlc-ai 저장소의 파일 크기 합
+  // 순서: 11/25 Colab 비교(T4, 원문 넣은 189문항)에서 '보이는 오답(웹 흐름)'이 낮은 순. 맨 앞이 기본 모델 (rag/results_slm_1125.json)
+  { id: 'Qwen2.5-3B-Instruct-q4f16_1-MLC', label: 'Qwen2.5 3B', dl: 1.8 },          // 9.4% · 규칙이 놓친 질문 판정 100%
+  { id: 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC', label: 'Qwen2.5 1.5B', dl: 0.9 },      // 12.5% · 가벼움(사양이 낮은 PC)
+  { id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC', label: 'Llama 3.2 3B', dl: 1.8 },      // 15.6%
+  { id: 'gemma-2-2b-it-q4f16_1-MLC', label: 'Gemma 2 2B', dl: 1.5 },                // 23.4%
+  { id: 'Qwen3.5-2B-q4f16_1-MLC', label: 'Qwen3.5 2B', dl: 1.1 },                   // 34.4%
 ];
 const AI_KEY = 'ansan-benefit-ai';
 const ai = { gen: 'search', model: LLM_MODELS[0].id, server: '', serverModel: '', llm: null, llmState: 'off', llmMsg: '', llmPct: 0,
@@ -935,8 +937,8 @@ async function loadEmbedder() {
   renderSet();
 }
 // 모델이 내놓는 글자를 조각조각 돌려준다 (브라우저 모델·서버 공통)
-async function* llmStream(messages) {
-  const opts = { messages, stream: true, temperature: 0.2, max_tokens: 320 };
+async function* llmStream(messages, extra = {}) {
+  const opts = { messages, stream: true, temperature: 0.2, max_tokens: 320, ...extra };
   if (ai.gen === 'webllm') {
     if (/Qwen3/.test(ai.model)) opts.extra_body = { enable_thinking: false };
     const stream = await ai.llm.chat.completions.create(opts);
@@ -978,7 +980,7 @@ function srcHTML(s) {
   return `<div class="src-card"><b>${icon('doc', 13)}<span>${esc(s.label)}</span></b>${s.quote ? `<q>“${esc(s.quote)}”</q>` : ''}${links ? `<div class="src-links">${links}</div>` : ''}</div>`;
 }
 // 답 종류 표시: 무엇을 보여 주는지 그대로 적는다 (모델이 쓴 글이면 'AI 생성')
-const KIND_TAG = { policy: '찾은 공고 내용', help: '도움말', list: '분류 묶음', judge: '판정 결과', compare: '나란히 보기', candidates: '후보 제시' };
+const KIND_TAG = { policy: '찾은 공고 내용', help: '도움말', list: '목록', judge: '판정 결과', compare: '나란히 보기', candidates: '후보 제시' };
 const unitName = (k) => { const p = byId(k); if (p) return shortName(p.name); const c = CORPUS.chunks.find((x) => x.id === k); return c ? c.title : k; };
 // 답이 나온 길 (발표·점검용): 어떤 규칙·검색으로 이 답이 나왔는지
 function howHTML(m) {
@@ -989,15 +991,18 @@ function howHTML(m) {
   if (d.top && d.top.length) rows.push(['검색 상위', d.top.map(([k], i) => `${i + 1}. ${unitName(k)}`).join(' / ')]);
   if (d.matched && d.matched.length) rows.push(['겹친 낱말', d.matched.join(', ')]);
   if (d.trust) rows.push(['확신', { single: '바로 답함', cand: '후보로 제시', none: '못 찾음' }[d.trust] + (d.z != null ? ` (1위가 뚜렷한 정도 z=${d.z})` : '')]);
-  if (m.gen) rows.push(['문장 정리', m.gen.state === 'done' ? `${m.gen.model} · 숫자·한국어 검사 통과` : m.gen.state === 'fail' ? `${m.gen.model} → 검사에 걸려 찾은 내용으로 대체` : m.gen.model]);
+  if (m.a.llm && m.a.llm.wide && m.gen) rows.push(['모델에 준 자료', '그 사업의 항목 전부 (묻는 항목을 정하지 못해서)']);
+  if (m.gen && m.gen.check) rows.push(['자료로 답할 수 있나 (AI 판단)', { yes: '예', no: '아니오 → 지어내지 않고 안내만 함', unknown: `알 수 없음(${m.gen.checkRaw || '빈 답'}) → 그대로 답함`, error: '확인 실패 → 그대로 답함' }[m.gen.check]]);
+  if (m.gen && m.gen.state !== 'abstain') rows.push(['문장 정리', m.gen.state === 'done' ? `${m.gen.model} · 숫자·한국어 검사 통과` : m.gen.state === 'fail' ? `${m.gen.model} → 검사에 걸려 찾은 내용으로 대체` : m.gen.model]);
   return `<details class="msg-how"><summary>어떻게 찾았나요?</summary><dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></details>`;
 }
 function msgHTML(m, i) {
   if (m.role === 'user') return `<div class="msg user"><div class="msg-b">${esc(m.text)}</div></div>`;
   const a = m.a, g = m.gen;
-  const byModel = g && (g.state === 'run' || g.state === 'done');
-  const tag = byModel ? `AI 생성 · ${esc(g.model)}` : (a && !a.abstain ? (KIND_TAG[a.kind] || '') : '');
-  const text = byModel ? (g.text ? esc(g.text) : '<span class="typing" aria-label="답을 쓰는 중"><i></i><i></i><i></i></span>') : esc(m.text);
+  const byModel = g && ['run', 'done', 'check', 'abstain'].includes(g.state);
+  const tag = g && g.state === 'abstain' ? `AI 판단 · ${esc(g.model)}` : byModel ? `AI 생성 · ${esc(g.model)}` : (a && !a.abstain ? (KIND_TAG[a.kind] || '') : '');
+  const typing = (label) => `<span class="typing" aria-label="${label}"><i></i><i></i><i></i></span>`;
+  const text = !byModel ? esc(m.text) : g.state === 'check' ? typing('찾은 자료로 답할 수 있는지 확인하는 중') : g.text ? esc(g.text) : typing('답을 쓰는 중');
   const seen = new Set();
   const srcs = a ? a.sources.filter((s) => { const k = s.policyId || s.chunkId; if (seen.has(k) || seen.size >= 2) return false; seen.add(k); return true; }) : [];
   // 낱말 검색으로 못 찾았거나 후보만 나온 마지막 답에는 '의미 검색으로 다시 찾기'를 붙인다
@@ -1008,8 +1013,8 @@ function msgHTML(m, i) {
   return `<div class="msg bot"><span class="bubble-ic" aria-hidden="true">${robot(18)}</span><div class="msg-col">
     <div class="msg-b">${tag ? `<span class="msg-tag">${tag}</span>` : ''}<span class="msg-text">${text}</span>
       ${g && g.warn ? `<p class="msg-warn">${icon('warn', 13)}<span>${esc(g.warn)}</span></p>` : ''}
-      ${g && g.state === 'done' ? `<details class="msg-alt"><summary>찾은 공고 내용 그대로 보기</summary><p>${esc(m.text)}</p></details>` : ''}</div>
-    ${a && a.cards.length ? `<div class="minis">${a.cards.slice(0, 6).map(miniHTML).join('')}</div>` : ''}
+      ${g && (g.state === 'done' || g.state === 'abstain') ? `<details class="msg-alt"><summary>찾은 공고 내용 그대로 보기</summary><p>${esc(m.text)}</p></details>` : ''}</div>
+    ${a && a.cards.length ? `<div class="minis">${a.cards.slice(0, a.kind === 'list' ? 10 : 6).map(miniHTML).join('')}</div>` : ''}
     ${srcs.length ? `<div class="srcs"><span class="srcs-h">근거</span>${srcs.map(srcHTML).join('')}</div>` : ''}
     ${retry || fb ? `<div class="msg-acts">${retry}${fb}</div>` : ''}
     ${a ? howHTML(m) : ''}
@@ -1043,10 +1048,10 @@ function renderSet() {
     <h3>답변 방식</h3>
     <div class="ai-opt" data-on="${ai.gen === 'search'}"><div class="ai-opt-h"><b>검색 답변</b>${on(ai.gen === 'search')}</div><p>찾은 공고 내용을 그대로 보여 줘요. 공고에 없는 세부 내용(지급일·제출 서류 등)을 물으면 가까운 항목을 대신 보여 줄 수 있어요.</p>
       ${ai.gen !== 'search' ? '<button type="button" class="ai-btn ghost" data-ai="gen-search">검색 답변으로 바꾸기</button>' : ''}</div>
-    <div class="ai-opt" data-on="${ai.gen === 'webllm'}"><div class="ai-opt-h"><b>브라우저 AI</b>${on(ai.gen === 'webllm')}</div><p>이 기기 안에서 소형 언어모델이 찾은 내용을 짧게 정리해요. PC 크롬 권장, 처음에 모델을 내려받아요.</p>
-      <div class="ai-row"><select id="ai-model" aria-label="모델 선택" ${ai.llmState === 'loading' ? 'disabled' : ''}>${LLM_MODELS.map((m) => `<option value="${m.id}" ${m.id === ai.model ? 'selected' : ''}>${m.label} · 약 ${m.gb}GB</option>`).join('')}</select>
+    <div class="ai-opt" data-on="${ai.gen === 'webllm'}"><div class="ai-opt-h"><b>브라우저 AI</b>${on(ai.gen === 'webllm')}</div><p>이 기기 안에서 소형 언어모델이 먼저 '찾은 자료로 답할 수 있는지' 확인하고, 답할 수 있을 때만 짧게 정리해요. PC 크롬 권장, 처음에 모델을 내려받아요.</p>
+      <div class="ai-row"><select id="ai-model" aria-label="모델 선택" ${ai.llmState === 'loading' ? 'disabled' : ''}>${LLM_MODELS.map((m) => `<option value="${m.id}" ${m.id === ai.model ? 'selected' : ''}>${m.label} · 내려받기 약 ${m.dl}GB</option>`).join('')}</select>
       <button type="button" class="ai-btn" data-ai="llm-on" ${ai.llmState === 'loading' ? 'disabled' : ''}>${ai.gen === 'webllm' ? '다시 불러오기' : '켜기'}</button></div>${prog(ai.llmState, ai.llmPct, ai.llmMsg)}</div>
-    <div class="ai-opt" data-on="${ai.gen === 'server'}"><div class="ai-opt-h"><b>서버 연결</b>${on(ai.gen === 'server')}</div><p>OpenAI 호환 주소(…/v1)를 넣으면 그 서버의 모델이 답해요. 질문과 찾은 공고 내용이 그 서버로 전송돼요.</p>
+    <div class="ai-opt" data-on="${ai.gen === 'server'}"><div class="ai-opt-h"><b>서버 연결</b>${on(ai.gen === 'server')}</div><p>OpenAI 호환 주소(…/v1)를 넣으면 그 서버의 모델이 같은 순서(답할 수 있는지 확인 → 정리)로 답해요. 질문과 찾은 공고 내용이 그 서버로 전송돼요.</p>
       <input id="ai-server" type="url" inputmode="url" placeholder="https://….trycloudflare.com/v1" value="${esc(ai.server)}" aria-label="서버 주소">
       <div class="ai-row"><input id="ai-server-model" type="text" placeholder="모델 이름 (예: exaone3.5:2.4b)" value="${esc(ai.serverModel)}" aria-label="모델 이름">
       <button type="button" class="ai-btn" data-ai="server-on">연결</button></div></div>
@@ -1072,7 +1077,7 @@ async function ask(text) {
   chat.msgs.push(m);
   logQA(m, q);
   renderChat();
-  if (a.llm.use && llmReady()) { await generate(m); logUpdate(m, { gen: m.gen.model, genState: m.gen.state, genAnswer: m.gen.state === 'done' ? m.gen.text.slice(0, 300) : undefined }); }
+  if (a.llm.use && llmReady()) { await generate(m); logUpdate(m, { gen: m.gen.model, genState: m.gen.state, check: m.gen.check, genAnswer: m.gen.state === 'done' ? m.gen.text.slice(0, 300) : undefined }); }
   chat.busy = false;
   renderChat();
 }
@@ -1085,7 +1090,19 @@ async function retrySemantic(q) {
   ask(q);
 }
 async function generate(m) {
-  m.gen = { state: 'run', text: '', model: llmLabel(), warn: '' };
+  const g = (m.gen = { state: 'run', text: '', model: llmLabel(), warn: '', check: null });
+  // 1) 답을 쓰기 전에 "이 자료로 답할 수 있나"를 먼저 묻는다 (예/아니오 한 낱말 → 빠르고, 숫자를 지어낼 틈이 없다)
+  if (m.a.llm.check) {
+    g.state = 'check'; renderChat();
+    try {
+      let raw = '';
+      for await (const piece of llmStream([{ role: 'system', content: m.a.llm.check.system }, { role: 'user', content: m.a.llm.check.user }], { temperature: 0, max_tokens: 8 })) raw += piece;
+      g.check = RAG.parseCheck(raw) || 'unknown'; g.checkRaw = cleanGen(raw).trim().slice(0, 30);
+    } catch (e) { g.check = 'error'; }
+    if (g.check === 'no') { g.state = 'abstain'; g.text = m.a.llm.noAnswer || '수집한 공고 자료로는 이 질문에 답할 수 없어요. 안산시청 공고 원문에서 확인해 주세요.'; return; }
+    g.state = 'run';
+  }
+  // 2) 답할 수 있으면(또는 판정을 못 읽으면) 답을 쓴다 → 숫자·한국어 검사
   renderChat();
   const el = [...document.querySelectorAll('#chat-log .msg.bot .msg-text')].at(-1), log = $('chat-log');
   try {

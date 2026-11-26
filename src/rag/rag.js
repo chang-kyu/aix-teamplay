@@ -13,6 +13,9 @@
  *
  * v2 (2026-11-24 2차): 범위 밖 예시 문서(section 'oos')로 "다루지 않는 질문"을 가려내고, 확신이 없으면 거절 대신 가까운 사업 후보를 보여 준다.
  *   새 질문 유형: 두 사업 비교 / 조건을 붙인 질문(휴학하면, 같이 살아도) / 나이를 말한 질문(서른 살도?) / 인사.  a.debug.route 에 답이 나온 길을 남긴다.
+ * v3 (2026-11-25): 목록·조건 질문("내 조건에 맞는 대회 있어?")은 질문을 조건 {분류, 내 조건, 지금 신청, 나이}으로 바꿔
+ *   분류로 거르고 → 판정 엔진 → 모집 상태 순서로 답한다(listByConditions). 목록 답에 '지금 신청할 수 있는 것'을 늘 넣는다.
+ *   모델을 쓸 때는 답을 쓰기 전에 "이 자료로 답할 수 있나(예/아니오)"를 먼저 묻는다(a.llm.check). 묻는 항목을 모르면 그 사업의 항목을 전부 자료로 준다.
  */
 export const RAG = (() => {
   // ============================================================
@@ -113,7 +116,7 @@ export const RAG = (() => {
   // 묻는 항목 → 섹션. 위에서부터 먼저 맞는 것을 쓴다
   const SECTION_RULES = [
     ['contact', /문의|전화|연락처|담당|부서/],
-    ['method', /어디(서|에|로)\s*(신청|접수|지원|해|하)|신청\s*(은|는)?\s*(어디|어떻게)|어떻게\s*(신청|접수|지원)|신청\s*(방법|하려면|하는 ?법|절차)|접수\s*(방법|처)|신청\s*사이트/],
+    ['method', /어떻게\s*(받|타)|받(으)?려면|어디(서|에|로)\s*(신청|접수|지원|해|하)|신청\s*(은|는)?\s*(어디|어떻게)|어떻게\s*(신청|접수|지원)|신청\s*(방법|하려면|하는 ?법|절차)|접수\s*(방법|처)|신청\s*사이트/],
     ['target', /몇\s*(살|세)|나이|연령|누가|누구|대상|자격|조건|소득|재산|휴학|재학|졸업|대학원|학생도|사람도|직장인도|외국인|주민등록|전입|거주|몇\s*년\s*(살|거주)|살아야|가점|우대/],
     ['period', /언제|기간|마감|모집|접수|일정|며칠|날짜|올해|내년|다음/],
     ['benefit', /얼마|금액|지원금|수당|상금|시급|한도|많이\s*(받|줘|주|나오)|몇\s*(번|회|개월)|뭘\s*(지원|해|줘|받)|무엇을|뭐\s*(지원|해\s*줘|줘|받)|어떤\s*(지원|혜택)|혜택|깎아|감면|할인|내용/],
@@ -134,14 +137,31 @@ export const RAG = (() => {
   const META = /(너|넌|당신|챗봇|ai|에이아이)\s*(는|은|이|가)?\s*(누구|뭐야|뭐니|뭐예요|뭐 ?하는)|뭐\s*(를|을)?\s*(할|물어볼)\s*수\s*있|무엇을\s*(할|물어볼)\s*수|어떤\s*질문|사용법|(어떤|무슨)\s*(모델|ai|인공지능|챗봇)|(뭘|뭐|뭐를|무엇을)\s*물어|(이거|이건|챗봇|도우미|여기)\s*(는|은)?\s*어떻게\s*(써|쓰는|사용)|^(안녕|하이|ㅎㅇ|hello|hi)/;
   const THANKS = /^(고마워|고맙|감사|땡큐|thank|ㄱㅅ|수고했|잘\s*가|바이|bye)/;
   // "~해도 돼요?", "~하면 못 받아요?" 처럼 되는지 묻는 말
-  const ASK_OK = /(받을|신청할|지원할|참여할|들을|될)\s*수\s*(있|없)|(못|안)\s*(받|돼|되|해)|가능|되나요|돼요|될까|되는\s*거|(해|어|아|여)도\s*(돼|되)|대상\s*(이|인가|이야|인지|일까)|돼\??$|되나\??$/;
+  const ASK_OK = /(받을|신청할|지원할|참여할|참가할|나갈|들어갈|이용할|들을|될)\s*수\s*(있|없)|(못|안)\s*(받|돼|되|해)|가능|되나요|돼요|될까|되는\s*거|(해|어|아|여)도\s*(돼|되)|대상\s*(이|인가|이야|인지|일까)|돼\??$|되나\??$/;
   // 판정 엔진이 보지 않는 조건(학적·취업·소득·가구·주택·병역). 이런 조건을 붙여 물으면 판정 결과가 아니라 공고의 '그 밖의 조건'으로 답한다
   const OTHER_COND = /휴학|재학|졸업|자퇴|편입|대학원|고졸|학생이|취업|취직|직장|회사|재직|퇴사|백수|알바|근로|일하(고|면|는)|프리랜서|사업자|자영업|소득|월급|연봉|재산|수급|차상위|부모|가족|형제|같이\s*살|따로\s*살|동거|결혼|기혼|미혼|신혼|자녀|군대|군인|복무|전역|입대|집이\s*있|자가|주택\s*(소유|이\s*있)|무주택|전세\s*(살|계약)|월세\s*(살|계약)|기숙사|고시원|외국인|국적/;
-  // 묶음 질문: 분류 이름이 질문에 직접 나올 때만
-  const TAG_WORDS = {
-    '장학금': /장학금|장학/, '공모전': /공모전/, '조사원': /조사원|조사요원/, '창업': /창업/, '공공일자리': /공공\s*일자리|공공근로/,
-    '주거': /주거|주택\s*지원|집\s*관련/, '저축': /저축|적금|통장/, '자립준비청년': /자립준비|보호종료|보호시설|보육원/,
-  };
+  // 목록·조건 질문 (3차). 분류마다: 질문 낱말(re), 코퍼스 분류(tags), 분류 밖에서 더할 사업(ids)
+  //  always: 분류 이름만 나와도 목록으로 답한다(2차까지의 묶음 질문). 나머지는 목록을 달라는 말(LIST_ASK·FIT·지금)이 같이 있을 때만,
+  //  또는 사업 하나로 좁히지 못했을 때만 목록으로 답한다 → 'e스포츠 대회 언제 해?'처럼 사업 하나를 묻는 질문은 그대로 둔다
+  const LIST_TOPICS = [
+    { label: '장학금', re: /장학금|장학/, tags: ['장학금'], always: true },
+    { label: '공모전', re: /공모전/, tags: ['공모전'], always: true },
+    { label: '조사원', re: /조사원|조사요원/, tags: ['조사원'], always: true },
+    { label: '창업', re: /창업/, tags: ['창업'], always: true },
+    { label: '공공일자리', re: /공공\s*일자리|공공근로/, tags: ['공공일자리'], always: true },
+    { label: '주거', re: /주거|주택\s*지원|집\s*관련/, tags: ['주거'], always: true },
+    { label: '저축', re: /저축|적금|통장/, tags: ['저축'], always: true },
+    { label: '자립준비청년', re: /자립준비|보호종료|보호시설|보육원/, tags: ['자립준비청년'], always: true },
+    { label: '대회·공모전', re: /대회|콘테스트|경진|경연|출품|경쟁(?!률)/, tags: ['공모전'], ids: ['ANS009', 'ANS050'] },
+    { label: '일자리', re: /일자리|알바|일거리|채용|일할\s*(곳|데|수)/, tags: ['일자리'] },
+    { label: '취업 준비', re: /취업|구직|취준/, tags: ['취업준비'] },
+    { label: '교육', re: /교육|강의|강좌|수업|배울|배우/, tags: ['교육'] },
+    { label: '문화·행사', re: /문화|축제|공연|예술|전시/, tags: ['문화'] },
+  ];
+  // 목록을 달라는 말 / 나한테 맞는 것을 묻는 말 / 지금 신청할 수 있는 것을 묻는 말
+  const LIST_ASK = /뭐\s*(가\s*)?있|뭐뭐|뭐가\s*있|어떤\s*(게|거|것|것들|사업|혜택|지원|프로그램|대회|일자리|행사)?\s*(이\s*|가\s*)?있|종류|목록|리스트|전부|모두|다\s*(알려|보여)|추천/;
+  const FIT = /(나|내|저|제)(한테|에게|게)?\s*(조건에?\s*)?맞는|(받을|신청할|지원할|참여할|참가할|나갈|들을|배울|할)\s*수\s*있는/;
+  const NOW_LIST = /지금|현재|당장|요즘|이번\s*(달|주)|접수\s*중|모집\s*중|마감\s*(안|전)|신청\s*가능/;
   // 수집한 항목(대상·내용·기간·방법·문의·참고)에 없는 주제. 해당 사업 청크에 그 낱말이 없으면 "자료에 없다"고 답한다
   const UNCOLLECTED = [
     ['제출 서류', /서류|증빙|구비|첨부|영수증|증명서|통장\s*사본|(뭐|뭘|뭐뭐|무엇을?|어떤\s*(거|것))\s*(를\s*)?(내야|제출|챙겨|준비해야)|준비물/],
@@ -154,6 +174,18 @@ export const RAG = (() => {
     ['중도 해지·포기', /해지|중도|중간에\s*(그만|포기|나가|빠지)|그만두|포기하면|환수|돌려줘야/],
     ['받는 중에 사정이 바뀐 경우', /(받는|다니는|참여하는|하는)\s*(중|도중|동안)에?.{0,14}(하면|되면|가면)|계속\s*받을/],
   ];
+  // 수집 안 한 주제를 공고 원문에서 찾을 때 쓰는 말: 공고문의 소제목·항목 이름처럼 그 주제를 '다루는' 표현만 (질문용 낱말보다 좁다)
+  const FULL_DOC = {
+    '제출 서류': /구비\s*서류|제출\s*서류|필요\s*서류|첨부\s*서류|증빙\s*서류/,
+    '선발·심사 방법': /선발\s*(방법|기준|절차)|선정\s*(방법|기준|절차)|심사\s*(방법|기준|항목|절차)|평가\s*(방법|기준|항목)|평가\s*[ㆍ·]\s*선발|서류\s*심사|면접\s*(심사|전형)/,
+    '결과 발표·지급 시기': /결과\s*발표|합격자\s*발표|선정\s*발표|발표\s*(일|일시|예정)|지급\s*(일|시기|일정|방법)|입금/,
+    '사용처': /사용처|가맹점|사용\s*(가능|범위|기한|용도)|사용할\s*수\s*있/,
+    '중복 수혜': /중복\s*(지원|수혜|참여|신청|불가|가능)/,
+    '세부 근무·이용 조건': /근무\s*(시간|조건|장소|지|형태|요일)|활동\s*(시간|장소)|대여\s*기간|반납/,
+    '보험·세금': /4대\s*보험|사대\s*보험|고용보험|산재보험|국민연금|원천징수|소득세|퇴직금/,
+    '중도 해지·포기': /중도\s*(해지|포기|탈락|중단)|해지|환수/,
+    '받는 중에 사정이 바뀐 경우': /전출|주소\s*(변경|이전)|자격\s*(상실|변동)|지원\s*중단/,
+  };
   // 다른 지역을 콕 집은 질문 (안산·경기도는 범위 안)
   const OTHER_REGION = /(서울|부산|대구|인천|대전|울산|세종|수원|성남|용인|화성|시흥|부천|안양|평택|강원|충북|충남|전북|전남|경북|경남|제주)(특별시|광역시|특별자치시|특별자치도|시|도)?(?=\s|$|의|에서|에|은|는|도|로)|(고양|구리|광주|이천|여주|양주|포천|김포|파주|오산|안성|하남|군포|의왕|광명|과천|남양주|의정부|동두천|가평|양평|연천)(시|군)/;
 
@@ -191,8 +223,17 @@ export const RAG = (() => {
     const opt = { bigram: true, keywords: true, mention: true, scope: true, minMass: 3.5, specificIdf: 2.5, minRatio: 0.5, denseZ: 2.4, candZ: 1.5, denseFloor: 0.45, oosMargin: 0.12, ...options };
     const P = new Map(policies.map((p) => [p.id, p]));
     const meta = corpus.policyMeta || {};
-    const chunks = corpus.chunks;
-    const byId = new Map(chunks.map((c) => [c.id, c]));
+    // 공고 원문(section 'full')은 사업을 '찾는' 데 쓰지 않는다. 원문에는 '서류'·'온라인' 같은 흔한 낱말이 많아서 넣어 보니
+    // 범위 밖 질문에 후보가 뜨고, 보고 있던 공고에서 다른 사업으로 새는 일이 늘었다(4차 실험). 사업이 정해진 뒤 그 사업 안에서 답을 찾을 때만 쓴다
+    const fullChunks = corpus.chunks.filter((c) => c.section === 'full');
+    const chunks = corpus.chunks.filter((c) => c.section !== 'full');
+    for (const c of fullChunks) {                      // 크기를 줄이려고 코퍼스에는 글만 넣었다 → 보여 줄 문장은 여기서 만든다
+      if (c.say) continue;
+      const body = c.text.split('\n').slice(1).join('\n');
+      c.say = '공고 원문에는 이렇게 적혀 있어요: ' + (body.length <= 300 ? body : body.slice(0, 300) + '…');
+      c.quote = body.slice(0, 200);
+    }
+    const byId = new Map(corpus.chunks.map((c) => [c.id, c]));
     // 검색 단위: 사업 1건 / 도움말 1개 / 범위 밖 유형 1개 (청크 여러 개가 한 단위로 묶인다)
     const unitOf = (c) => c.unit || c.policyId || c.id;
     const chunksOf = new Map();
@@ -209,6 +250,19 @@ export const RAG = (() => {
         kw: opt.keywords ? (c.policyId ? [...(meta[c.policyId]?.kw || []), ...(meta[c.policyId]?.tags || [])] : (c.keywords || [])).join(' ') : '',
       },
     })), { bigram: opt.bigram, fieldWeights: options.fieldWeights });
+
+    // 공고 원문 전용 색인: 정해진 사업 안에서 질문과 가까운 원문 조각을 고를 때만 쓴다
+    const fullOf = new Map();
+    fullChunks.forEach((c) => { if (!fullOf.has(c.policyId)) fullOf.set(c.policyId, []); fullOf.get(c.policyId).push(c); });
+    const fullIndex = fullChunks.length ? buildIndex(fullChunks.map((c) => ({ id: c.id, fields: { body: c.text.split('\n').slice(1).join('\n') } })), { bigram: opt.bigram }) : null;
+    const fullNo = new Map(fullChunks.map((c, i) => [c.id, i]));
+    function fullRanked(pid, query) {
+      const list = fullOf.get(pid) || [];
+      if (!list.length) return [];
+      const sc = scoreAll(fullIndex, query);
+      return list.map((c) => ({ chunk: c, score: sc[fullNo.get(c.id)] })).sort((a, b) => b.score - a.score);
+    }
+    const bodyOf = (c) => c.text.split('\n').slice(1).join(' ');
 
     // 단위별 '이름·검색어' 낱말 (본문에만 나오는 낱말과 구분한다)
     const anchorCache = new Map();
@@ -421,6 +475,11 @@ export const RAG = (() => {
       return bestScore >= 1.5 ? best : null;
     }
 
+    // 모델이 답을 쓰기 전에 먼저 묻는 것: 이 자료로 답할 수 있나 (예/아니오). 답이 한 낱말이라 빠르고, 숫자를 지어낼 틈이 없다
+    function checkPrompt(query, contexts) {
+      const body = contexts.map((t, i) => `[${i + 1}] ${t}`).join('\n\n');
+      return { system: CHECK_SYSTEM, user: `[자료]\n${body}\n\n[질문] ${query}\n\n[자료만 보고 답할 수 있나요? 예 또는 아니오]` };
+    }
     const SYSTEM = [
       "당신은 '안산 청년 혜택 알리미'의 공고문 안내 도우미입니다. 아래 규칙을 지켜 한국어 존댓말(해요체)로 답하세요.",
       '1. [자료]에 적힌 내용만 사용합니다. 자료에 없는 내용은 지어내지 말고 "수집한 공고 자료에는 그 내용이 없어요. 원문에서 확인해 주세요."라고 답합니다.',
@@ -431,6 +490,85 @@ export const RAG = (() => {
     function prompt(query, contexts) {
       const body = contexts.map((t, i) => `[${i + 1}] ${t}`).join('\n\n');
       return { system: SYSTEM, user: `[자료]\n${body}\n\n[질문] ${query}\n\n[답]` };
+    }
+
+    // ---- 목록·조건 질문: 질문 → 조건 {분류, 내 조건, 지금 신청, 나이, 항목} → 분류로 거르기 → 판정 엔진 → 모집 상태 ----
+    const idsOfTopic = (t) => { const set = new Set(t.ids || []); return policies.filter((p) => set.has(p.id) || (meta[p.id]?.tags || []).some((g) => t.tags.includes(g))).map((p) => p.id); };
+    // 질문에서 분류 고르기: '할 수 있는 ○○', '맞는 ○○'처럼 바로 뒤에 오는 분류가 먼저, 없으면 질문에서 가장 뒤에 나온 분류(한국어는 중심 낱말이 뒤에 온다)
+    function listTopic(text) {
+      const hits = [];
+      for (const t of LIST_TOPICS) { const m = t.re.exec(text); if (m) { let at = m.index, end = m.index + m[0].length; for (const m2 of text.matchAll(new RegExp(t.re.source, 'g'))) { at = m2.index; end = m2.index + m2[0].length; } hits.push({ t, at, end, first: m.index }); } }
+      if (!hits.length) return null;
+      const fit = FIT.exec(text);
+      if (fit) {
+        const win = text.slice(fit.index + fit[0].length, fit.index + fit[0].length + 14);
+        const after = hits.map((h) => ({ h, i: win.search(h.t.re) })).filter((x) => x.i >= 0).sort((a, b) => a.i - b.i)[0];
+        if (after) return after.h.t;
+      }
+      // 문장 끝 쪽 분류를 고르되, 낱말이 겹치면('공공일자리' 안의 '일자리') 더 긴 쪽(더 좁은 분류)을 고른다
+      return hits.sort((a, b) => b.end - a.end || (b.end - b.at) - (a.end - a.at))[0].t;
+    }
+    const monthsOf = (p, today) => {
+      const a = p.apply || {};
+      if (!a.start) return null;
+      const [y1, m1] = a.start.split('-').map(Number), [y2, m2] = (a.end || a.start).split('-').map(Number), ty = Number(String(today || '').slice(0, 4)) || y1;
+      const yy = y1 !== ty ? `${y1}년 ` : '';
+      return m1 === m2 && y1 === y2 ? `${yy}${m1}월` : `${yy}${m1}~${y2 !== y1 ? y2 + '년 ' : ''}${m2}월`;
+    };
+    const RECRUIT_RANK = { open: 0, upcoming: 1, always: 2, unknown: 3, closed: 4 };
+    // cond: { topic, personal, openOnly, age, section } — 규칙으로 만든 조건. 나중에 모델이 같은 모양의 조건을 만들어 넘겨도 된다
+    function listByConditions(cond, ctx, scoreOf = new Map()) {
+      const t = cond.topic, label = t.label, ids = idsOfTopic(t);
+      const rs = new Map(ctx.profile ? ids.map((id) => [id, judgePolicy(P.get(id), ctx.profile, ctx.today)]) : []);
+      const st = (id) => rs.get(id)?.status, rc = (id) => rs.get(id)?.recruit || { state: 'unknown' };
+      const okNow = (id) => !cond.personal || ['eligible', 'eligible_if_move_in'].includes(st(id));
+      const ageOk = (id) => cond.age == null || ageFits(P.get(id), cond.age);
+      const isOpen = (id) => ['open', 'always'].includes(rc(id).state);
+      ids.sort((a, b) => (isOpen(b) && okNow(b) && ageOk(b)) - (isOpen(a) && okNow(a) && ageOk(a)) || RECRUIT_RANK[rc(a).state] - RECRUIT_RANK[rc(b).state]
+        || (rc(a).dday ?? 999) - (rc(b).dday ?? 999) || (scoreOf.get(b) || 0) - (scoreOf.get(a) || 0));
+      const nm = (id) => shortName(P.get(id).name);
+      const n = ids.length, parts = [];
+      // 1) 분류와 개수
+      const pool = ids.filter(ageOk);
+      const now = pool.filter((id) => isOpen(id) && okNow(id));
+      const allClosed = rs.size && ids.every((id) => rc(id).state === 'closed');
+      if (cond.openOnly && rs.size && !now.length) parts.push(`지금 신청할 수 있는 '${label}' 사업은 없어요.`);
+      const head = parts.length;
+      parts.push(`'${label}' 사업은 ${n}건이에요` + (n <= 8 && !allClosed ? `: ${ids.map(nm).join(', ')}.` : '.'));
+      // 2) 말한 나이 / 내 조건
+      if (cond.age != null) parts.push(`그중 만 ${cond.age}세가 나이 조건에 드는 건 ${pool.length}건이에요${pool.length && pool.length < n ? `: ${pool.map(nm).join(', ')}` : ''}. (말한 나이를 만 나이로 봤어요)`);
+      else if (cond.personal && rs.size) {
+        const by = (s) => ids.filter((id) => st(id) === s);
+        const kinds = [['eligible', '충족'], ['eligible_if_move_in', '전입하면 충족'], ['eligible_from', '곧 충족'], ['check', '확인필요'], ['ineligible', '미충족']].filter(([s]) => by(s).length);
+        const from = (s) => (s === 'eligible_from' ? `(${[...new Set(by(s).map((id) => dot(rs.get(id).eligibleFrom)))].join(', ')}부터)` : '');
+        if (kinds.length === 1) parts.push(`내 거주·나이 조건으로는 ${n}건 모두 ${kinds[0][1]}${from(kinds[0][0])}이에요.`);
+        else parts.push(`내 거주·나이 조건으로는 ${kinds.map(([s, k]) => `${k} ${by(s).length}건${from(s)}`).join(', ')}이에요.`);
+      }
+      // 묻는 항목이 있으면("대회 신청 방법") 사업마다 그 항목 한 줄 (내 조건·나이를 물은 경우는 판정 요약이 먼저라 붙이지 않는다)
+      const LINE = { period: ['접수 기간', '안내'], benefit: ['금액', '내용'], method: ['신청 방법'], contact: ['담당', '문의'], target: ['나이', '거주'] }[cond.section];
+      const listSection = LINE && !cond.personal && cond.age == null && n <= 8 ? cond.section : null;
+      if (listSection) {
+        const lineOf = (id) => { const c = getChunk(id, listSection); if (!c || c.thin) return null; for (const lb of LINE) { const m = c.text.match(new RegExp(`\\n- ${lb}: ([^\\n]+)`)); if (m) return m[1]; } return null; };
+        parts[head] = `'${label}' 사업 ${n}건의 ${SECTION_LABEL[listSection]}${hasFinal(SECTION_LABEL[listSection]) ? '이에요' : '예요'}: ` + ids.map((id, i) => `${'①②③④⑤⑥⑦⑧'[i]} ${nm(id)} — ${lineOf(id) || '자료에 없음'}`).join(' ') + '.';
+      }
+      // 3) 모집 상태: 지금 신청할 수 있는 것 / 모두 끝났으면 지난 접수 시기
+      if (rs.size) {
+        const tag = (id) => (rc(id).state === 'always' ? '상시' : `D-${rc(id).dday}`) + (st(id) === 'eligible_if_move_in' && cond.personal ? ', 전입하면' : '');
+        const but = cond.personal || cond.age != null ? '하지만 ' : '';
+        if (now.length) parts.push(`지금 신청할 수 있는 건 ${now.length}건이에요: ${now.slice(0, 5).map((id) => `${nm(id)}(${tag(id)})`).join(', ')}${now.length > 5 ? ' 등' : ''}.`);
+        else if (allClosed) {
+          // 모두 끝났으면 지난 접수 시기를 알려 준다 (사업마다 접수 기간을 이미 보여 준 경우는 빼고)
+          const when = listSection === 'period' ? [] : ids.map((id) => [id, monthsOf(P.get(id), ctx.today)]).filter(([, w]) => w);
+          // '지금 신청할 수 있는 건 없어요'로 이미 시작했으면 '지금은'을 되풀이하지 않는다
+          parts.push(`${but}${cond.openOnly ? '' : '지금은 '}${n}건 모두 이번 모집이 끝났어요.` + (when.length ? ` 지난 접수 시기는 ${when.slice(0, 4).map(([id, w]) => `${nm(id)} ${w}`).join(', ')}${when.length > 4 ? ' 등' : ''}이었어요.` : '') + ' 다음 모집은 안산시청 공고에서 확인해 주세요.');
+        } else if (!cond.openOnly) {
+          const soon = ids.filter((id) => rc(id).state === 'upcoming');
+          parts.push(`${but}지금 접수 중인 건 없어요.` + (soon.length ? ` 곧 접수가 시작되는 건 ${soon.map((id) => `${nm(id)}(D-${rc(id).dday})`).join(', ')}이에요.` : ''));
+        }
+      }
+      const how = [`분류=${label}`, cond.personal ? '내 조건' : null, cond.openOnly ? '지금 신청' : null, cond.age != null ? `나이 ${cond.age}세` : null, listSection ? `항목=${SECTION_LABEL[listSection]}` : null].filter(Boolean).join(', ');
+      return { kind: 'list', intent: 'list', section: listSection, policies: ids, cards: ids.slice(0, 10), text: parts.join(' '), cond: { ...cond, topic: label },
+        sources: ids.slice(0, 3).map((id) => src(getChunk(id, 'overview'))), suggestions: now.length ? now.slice(0, 3).map((id) => `${nm(id)} 어디서 신청해요?`) : SUGGEST_HOME, llm: { use: false }, how };
     }
 
     const SUGGEST_HOME = ['전입신고하면 뭐가 달라져요?', '지금 신청할 수 있는 거 뭐 있어?', '거주 기간은 어떻게 계산해요?'];
@@ -470,8 +608,14 @@ export const RAG = (() => {
         top: found.ranked.slice(0, 3).map((r) => [r.key, +r.score.toFixed(2)]), lexTop: found.lexTop ? found.lexTop.key : null, mentioned, section,
         scope: { lex: found.scope.lex ? [found.scope.lex.key, found.scope.lex.name || found.scope.lex.words.join('·')] : null, den: found.scope.den ? [found.scope.den.key, +found.scope.den.score.toFixed(2), +found.scope.den.margin.toFixed(2)] : null } };
 
-      const tag = Object.keys(TAG_WORDS).find((t) => TAG_WORDS[t].test(q));
-      const tagIds = tag ? policies.filter((p) => (meta[p.id]?.tags || []).includes(tag)).map((p) => p.id) : [];
+      // 목록·조건 질문의 분류 (사업 이름을 말했으면 목록이 아니다)
+      const topic = mentioned.length ? null : listTopic(rewrite(q));
+      const topicCue = !!topic && (topic.always || LIST_ASK.test(bare) || FIT.test(bare) || NOW_LIST.test(bare));
+      const tag = topic && topic.always ? topic.label : null;            // 범위 밖 안내에서 '안산의 ○○ 사업' 카드를 보여 줄 때 쓴다
+      const tagIds = tag ? idsOfTopic(topic) : [];
+      const listCond = () => ({ topic, personal: !!ctx.profile && !third && (firstPerson || /맞는|(받을|신청할|지원할|참여할|참가할|나갈)\s*수\s*있/.test(bare) || WHEN_OK.test(bare) || CAN_GET.test(bare)),
+        openOnly: NOW_LIST.test(bare), age: saidAge, section });
+      const listAnswer = (why) => { const o = listByConditions(listCond(), ctx, new Map(found.all.map((r) => [r.key, r.score]))); return done(`${why} (조건: ${o.how})`, o); };
       // 내 조건으로 지금 신청할 수 있는 사업 목록 ("지금 신청할 수 있는 거?", "뭐 받을 수 있어?", "지원금 뭐 있어?")
       const openList = (route) => {
         const res = policies.map((p) => judgePolicy(p, ctx.profile, ctx.today)).filter((r) => r.status === 'eligible');
@@ -512,14 +656,14 @@ export const RAG = (() => {
             text: `지금 접수 중인 사업은 ${res.length}건이에요. 내 조건으로 바로 신청할 수 있는 것 중 마감이 가장 가까운 건 ${nm(first)}(D-${first.recruit.dday})예요.` +
               (res[0] !== first ? ` ${nm(res[0])}(D-${res[0].recruit.dday})는 더 빨리 마감하지만 지금은 '${STATUS_LABEL[res[0].status]}' 상태예요.` : '') });
         }
-        const whatCan = WHAT_CAN.test(q) && !third && !tag;
+        const whatCan = (WHAT_CAN.test(q) || (FIT.test(bare) && /(거|것|게|사업|혜택|지원)/.test(bare))) && !third && !topic;
         if (whatCan && saidAge != null) {
           const fit = all().filter((r) => ageFits(P.get(r.id), saidAge));
           const open = [...fit.filter((r) => r.recruit.state === 'open').sort((a, b) => a.recruit.dday - b.recruit.dday), ...fit.filter((r) => r.recruit.state === 'always')];
           return done('나이로 훑어보기', { kind: 'judge', intent: 'age_list', policies: open.map((r) => r.id), cards: open.slice(0, 6).map((r) => r.id),
             text: `만 ${saidAge}세가 나이 조건에 드는 사업은 ${policies.length}건 중 ${fit.length}건이에요. 그중 지금 신청할 수 있는 건 ${open.length}건이에요${open.length ? `: ${open.slice(0, 5).map(nm).join(', ')}${open.length > 5 ? ' 등' : ''}` : ''}. 말한 나이만 본 결과예요. 거주 조건까지 보려면 '내 조건'에 생년월일과 전입일을 넣어 주세요.` });
         }
-        if ((NOW_OPEN.test(q) || whatCan) && !third) return openList('판정 엔진(지금 신청 가능)');
+        if ((NOW_OPEN.test(q) || whatCan) && !third && !topic) return openList('판정 엔진(지금 신청 가능)');
       }
 
       // (3-1) 다루지 않는 범위: 범위 밖 낱말·이름이 질문에 있거나(낱말), 범위 밖 예시가 사업보다 뚜렷이 가까울 때(의미)
@@ -569,39 +713,8 @@ export const RAG = (() => {
           llm: { use: true, ...prompt(q, sec ? cs.map((c) => c.text) : ids.flatMap((id) => [getChunk(id, 'benefit'), getChunk(id, 'target')].filter(Boolean).map((c) => c.text))) } });
       }
 
-      // (4) 묶음 질문 (장학금·공모전처럼 분류 이름이 나온 경우)
-      if (tag && !mentioned.length && !(page && /이거|이건|여기|이 사업/.test(q))) {
-        const ids = tagIds.slice();
-        const scoreOf = new Map(found.all.map((r) => [r.key, r.score]));
-        ids.sort((a, b) => (scoreOf.get(b) || 0) - (scoreOf.get(a) || 0));
-        if (ids.length) {
-          let text = `'${tag}' 사업은 ${ids.length}건이에요: ${ids.map((id) => shortName(P.get(id).name)).join(', ')}.`;
-          // 묻는 항목이 있으면("장학금 신청 기간") 사업마다 그 항목 한 줄을 붙인다. 내 조건·나이를 물은 경우는 판정 요약이 먼저
-          const LINE = { period: ['접수 기간', '안내'], benefit: ['금액', '내용'], method: ['신청 방법'], contact: ['담당', '문의'], target: ['나이', '거주'] }[section];
-          const lineOf = (id) => { const c = getChunk(id, section); if (!c || c.thin) return null; for (const lb of LINE) { const m = c.text.match(new RegExp(`\\n- ${lb}: ([^\\n]+)`)); if (m) return m[1]; } return null; };
-          let listSection = null;
-          if (saidAge != null) {
-            const fit = ids.filter((id) => ageFits(P.get(id), saidAge));
-            text += ` 그중 만 ${saidAge}세가 나이 조건에 드는 사업은 ${fit.length}건이에요${fit.length ? `: ${fit.map((id) => shortName(P.get(id).name)).join(', ')}` : ''}. (말한 나이를 만 나이로 봤어요)`;
-          } else if (ctx.profile && (WHEN_OK.test(q) || CAN_GET.test(q) || firstPerson)) {
-            const rs = ids.map((id) => judge(id, ctx));
-            const by = (s) => rs.filter((r) => r.status === s);
-            const parts = [];
-            if (by('eligible').length) parts.push(`충족 ${by('eligible').length}건`);
-            if (by('eligible_if_move_in').length) parts.push(`전입하면 충족 ${by('eligible_if_move_in').length}건`);
-            const from = by('eligible_from');
-            if (from.length) parts.push(`곧 충족 ${from.length}건(${[...new Set(from.map((r) => dot(r.eligibleFrom)))].join(', ')}부터)`);
-            if (by('ineligible').length) parts.push(`미충족 ${by('ineligible').length}건`);
-            text += ` 내 조건으로는 ${parts.join(', ')}이에요.`;
-          } else if (LINE && ids.length <= 8) {
-            listSection = section;
-            text = `'${tag}' 사업 ${ids.length}건의 ${SECTION_LABEL[section]}${hasFinal(SECTION_LABEL[section]) ? '이에요' : '예요'}: ` + ids.map((id, i) => `${'①②③④⑤⑥⑦⑧'[i]} ${shortName(P.get(id).name)} — ${lineOf(id) || '자료에 없음'}`).join(' ') + '.';
-          }
-          return done(`분류 묶음: ${tag}`, { kind: 'list', intent: 'list', section: listSection, policies: ids, cards: ids.slice(0, 8), text,
-            sources: ids.slice(0, 3).map((id) => src(getChunk(id, 'overview'))),
-            llm: { use: false } });
-        }
-      }
+      // (4) 목록·조건 질문: 분류 이름이 나왔고(장학금·공모전…) 또는 분류 + 목록을 달라는 말(대회 뭐 있어·나한테 맞는 일자리…)
+      if (topicCue && !(page && /이거|이건|여기|이 사업/.test(q))) return listAnswer(topic.always ? `분류 묶음: ${topic.label}` : '목록 질문');
 
       // (5) 어느 사업 이야기인지 정하기: 이름이 나온 사업 > 화면에서 보고 있는 사업 > 검색 1위
       let target = null, how = null;
@@ -642,13 +755,14 @@ export const RAG = (() => {
         const hev = pick ? evidence(q, pick) : null;
         if (pick && ((hev.specific >= 1 && (hev.matched.length >= 2 || define)) || (found.dense && pick === top && trust === 'single'))) {
           const h = byId.get(pick.key);
-          return done('도움말', { kind: 'help', intent: 'help', text: h.say, sources: [src(h)], llm: { use: true, ...prompt(q, [h.text]) } });
+          return done('도움말', { kind: 'help', intent: 'help', text: h.say, sources: [src(h)], llm: { use: true, ...prompt(q, [h.text]), check: checkPrompt(q, [h.text]), noAnswer: '수집한 도움말 자료로는 이 질문에 답할 수 없어요. 사업 이름을 넣어 다시 물어봐 주세요.' } });
         }
       }
 
       if (!target && top && top.type === 'policy' && trust === 'single') { target = top.key; how = 'search'; }
 
       // (7) 하나로 좁히지 못함 → 가까운 사업 후보를 보여 주거나(cand), 못 찾았다고 답한다(none)
+      if (!target && topic && trust === 'none') return listAnswer('사업을 못 찾아 분류 목록');
       if (!target && ctx.profile && !third && !tag && GENERIC_LIST.test(bare) && !(trust === 'cand' && ev.anchor >= 1)) return openList('넓게 물은 질문 → 판정 엔진(지금 신청 가능)');
       if (!target) {
         const nearIds = found.ranked.filter((r) => r.type === 'policy').slice(0, 3).map((r) => r.key);
@@ -684,11 +798,24 @@ export const RAG = (() => {
       const personal = !third && !otherCond && saidAge == null && (WHY_NOT.test(bare) || WHEN_OK.test(bare) || (CAN_GET.test(bare) && (firstPerson || how === 'page' || how === 'prev' || !section || MOVE_IN.test(bare))) || (firstPerson && ASK_OK.test(bare)));
 
       // (8) 수집하지 않은 주제 → 자료에 없다고 답한다
-      const topic = UNCOLLECTED.find(([, re]) => re.test(bare) && !mine.some((c) => re.test(c.text.split('\n').slice(1).join(' '))));
-      if (topic && !ctx.noGuard) {
+      const gap = UNCOLLECTED.find(([, re]) => re.test(bare) && !mine.some((c) => re.test(c.text.split('\n').slice(1).join(' '))));
+      if (gap && !ctx.noGuard) {
         const contact = getChunk(target, 'contact');
-        return done(`${via} → 수집 안 한 주제(${topic[0]})`, { kind: 'abstain', abstain: true, reason: 'uncollected', intent: 'unans', focus: target, policies: [target],
-          text: `${shortName(p.name)}의 '${topic[0]}'${hasFinal(topic[0]) ? '은' : '는'} 수집한 공고 자료에 없어요. 안산시청 공고 원문에서 확인해 주세요.` + (contact ? ` ${contact.say}` : ''),
+        // 원문에서 그 주제를 다룬 부분(소제목·항목 이름으로 찾는다: '구비서류', '선발 방법', '4대보험' …)이 있으면 그 부분을 그대로 보여 준다
+        const docRe = FULL_DOC[gap[0]];
+        const hits = docRe ? fullRanked(target, q).filter((x) => docRe.test(bodyOf(x.chunk))) : [];
+        if (hits.length) {
+          const fc = hits.slice(0, 2).map((x) => x.chunk), body = bodyOf(fc[0]), at = body.search(docRe);
+          const from = Math.max(0, at - 40), piece = (from ? '…' : '') + body.slice(from, from + 260).trim() + (body.length > from + 260 ? '…' : '');
+          const facts = fc.map((c) => c.text);
+          return done(`${via} → 공고 원문(${gap[0]})`, { kind: 'policy', intent: 'fulltext', section: 'full', focus: target, policies: [target],
+            text: `${shortName(p.name)}: 정리한 항목에는 '${gap[0]}'${hasFinal(gap[0]) ? '이' : '가'} 없어서 공고 원문에서 관련 부분을 찾았어요. 질문의 답인지 직접 확인해 주세요. "${piece}"`,
+            sources: [...fc, contact].filter(Boolean).map(src), suggestions: suggestFor(target),
+            llm: { use: true, ...prompt(q, facts), check: checkPrompt(q, facts),
+              noAnswer: `${shortName(p.name)}의 '${gap[0]}'${hasFinal(gap[0]) ? '은' : '는'} 수집한 공고 자료로는 확인할 수 없어요. 안산시청 공고 원문이나 담당부서에 확인해 주세요.` + (contact ? ` ${contact.say}` : '') } });
+        }
+        return done(`${via} → 수집 안 한 주제(${gap[0]})`, { kind: 'abstain', abstain: true, reason: 'uncollected', intent: 'unans', focus: target, policies: [target],
+          text: `${shortName(p.name)}의 '${gap[0]}'${hasFinal(gap[0]) ? '은' : '는'} 수집한 공고 자료에 없어요. 안산시청 공고 원문에서 확인해 주세요.` + (contact ? ` ${contact.say}` : ''),
           sources: [contact, getChunk(target, 'method')].filter(Boolean).map(src), suggestions: suggestFor(target) });
       }
 
@@ -749,14 +876,36 @@ export const RAG = (() => {
       let text = `${shortName(p.name)}: ` + (lead && !main.say.includes(lead.replace(/^[^:]+:\s*/, '')) ? `${lead}. ` : '') + main.say;
       if (r && (main.section === 'period' || main.section === 'method')) text += ` ${recruitLine(r)}`;
       if (how === 'search' && others.length) text += ` 비슷한 사업: ${others.map((id) => shortName(P.get(id).name)).join(', ')}.`;
-      const facts = ctxChunks.map((c) => c.text);
-      if (r && (main.section === 'period' || main.section === 'method')) facts.push(`${p.name} | 오늘(${ctx.today}) 기준 모집 상태\n- ${recruitLine(r)}`);
+      // 모델에 줄 자료: 묻는 항목을 알면 그 항목(+참고), 모르면 그 사업의 항목 전부 ("어떻게 받아?"처럼 규칙이 못 읽은 말투도 모델이 고를 수 있게)
+      const ORDER = ['overview', 'target', 'benefit', 'period', 'method', 'contact', 'notes'];
+      const wide = !section ? ORDER.map((sc) => getChunk(target, sc)).filter((c) => c && !c.thin).concat(fullRanked(target, q).filter((x) => x.score > 0).slice(0, 2).map((x) => x.chunk)) : null;
+      const facts = (wide || ctxChunks).map((c) => c.text);
+      if (r) facts.push(`${p.name} | 오늘(${ctx.today}) 기준 모집 상태\n- ${recruitLine(r)}`);
+      const contactC = getChunk(target, 'contact');
       return done(`${via} → ${SECTION_LABEL[main.section]}`, { kind: 'policy', intent: how === 'search' && !section ? 'find' : 'fact', section: main.section, focus: target, policies: [target, ...(how === 'search' ? others : [])],
         cards: how === 'search' ? [target, ...others] : [], text, sources: ctxChunks.map(src), suggestions: suggestFor(target),
-        llm: { use: true, ...prompt(q, facts) } });
+        llm: { use: true, ...prompt(q, facts), wide: !!wide, check: checkPrompt(q, facts),
+          noAnswer: `${shortName(p.name)}: 수집한 공고 자료로는 이 질문에 답할 수 없어요. 안산시청 공고 원문이나 담당부서에 확인해 주세요.` + (contactC ? ` ${contactC.say}` : '') } });
     }
 
-    return { answer, search, mentions, sectionOf, evidence, index, chunks, byId, prompt, SYSTEM, aliases: uniqueAliases };
+    return { answer, search, mentions, sectionOf, evidence, index, chunks, byId, prompt, checkPrompt, SYSTEM, CHECK_SYSTEM, aliases: uniqueAliases, listTopic, listByConditions, topics: LIST_TOPICS };
+  }
+
+  // 모델에게 먼저 묻는 판정: 이 자료로 답할 수 있나
+  const CHECK_SYSTEM = [
+    "당신은 '안산 청년 혜택 알리미'의 자료 확인 담당입니다.",
+    '[자료]만 보고 [질문]에 답할 수 있으면 "예", 답할 수 없으면 "아니오"라고 한 낱말로만 답하세요.',
+    '비슷한 내용이 있어도 질문이 묻는 것(예: 지급일, 제출 서류, 사용처, 이자율)이 자료에 적혀 있지 않으면 "아니오"입니다.',
+  ].join('\n');
+  // 모델의 판정 답 → 'yes' | 'no' | null (알 수 없음)
+  function parseCheck(text) {
+    const t = String(text || '').replace(/<think>[\s\S]*?(<\/think>|$)/g, '').replace(/[\s"'`*.,:!()\[\]]+/g, ' ').trim().toLowerCase();
+    if (!t) return null;
+    if (/^(아니|아뇨|no(?![a-z])|없|불가|답할\s*수\s*없)/.test(t)) return 'no';
+    if (/^(예|네|yes(?![a-z])|가능|있|답할\s*수\s*있)/.test(t)) return 'yes';
+    if (/아니오|아니요|답할\s*수\s*없/.test(t)) return 'no';
+    if (/(^|\s)(예|네)(\s|$)/.test(t)) return 'yes';
+    return null;
   }
 
   // ============================================================
@@ -810,6 +959,7 @@ export const RAG = (() => {
   // ============================================================
   function denseIndex(emb, chunkIds) {
     if (!emb || !emb.data) return null;
+    if (chunkIds) chunkIds = chunkIds.filter((id) => !/#full\d+$/.test(id));      // 공고 원문 청크는 벡터를 만들지 않는다 (사업 찾기에 안 씀)
     if (chunkIds && (emb.ids.length !== chunkIds.length || emb.ids.some((id, i) => id !== chunkIds[i]))) return null;   // 코퍼스와 짝이 안 맞으면 쓰지 않는다
     const bin = atob(emb.data), n = emb.n, dim = emb.dim;
     const q = new Int8Array(bin.length);
@@ -827,5 +977,5 @@ export const RAG = (() => {
     };
   }
 
-  return { create, denseIndex, tokenize, wordTokens, buildIndex, scoreAll, aliasesOf, checkNumbers, koreanOnly, ABSTAIN_RE, SECTION_LABEL, STATUS_LABEL };
+  return { create, denseIndex, tokenize, wordTokens, buildIndex, scoreAll, aliasesOf, checkNumbers, koreanOnly, parseCheck, CHECK_SYSTEM, ABSTAIN_RE, SECTION_LABEL, STATUS_LABEL };
 })();

@@ -34,7 +34,7 @@ if "/*__RAG__*/" in out:                                   # AI 도우미가 있
     emb_path, emb = ROOT / "embeddings_v3.json", None
     if emb_path.exists():
         emb = json.loads(emb_path.read_text(encoding="utf-8"))
-        if emb["ids"] != [c["id"] for c in corpus["chunks"]]:
+        if emb["ids"] != [c["id"] for c in corpus["chunks"] if c.get("section") != "full"]:     # 공고 원문 청크는 벡터를 만들지 않는다 (rag.js 참고)
             print("! embeddings_v3.json 이 코퍼스와 맞지 않아 뺐어요 (의미 검색 꺼짐). node rag/build_embeddings.mjs 를 다시 실행하세요.")
             emb = None
     out = (out.replace("/*__RAG__*/", js_module(ROOT / "rag" / "rag.js"))

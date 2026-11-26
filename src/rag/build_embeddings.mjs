@@ -21,6 +21,7 @@ if (process.env.HF_HOME) env.cacheDir = process.env.HF_HOME + '/transformers_js'
 const root = new URL('../', import.meta.url);
 const { policies } = JSON.parse(readFileSync(new URL('policies_v3.json', root)));
 const corpus = JSON.parse(readFileSync(new URL('corpus_v3.json', root)));
+corpus.chunks = corpus.chunks.filter((c) => c.section !== 'full');   // 공고 원문 청크는 사업 찾기에 쓰지 않으므로 벡터를 만들지 않는다 (rag.js 참고)
 const ev = JSON.parse(readFileSync(new URL('eval_set.json', import.meta.url)));
 
 // 문서 글: 청크 본문 + 사업별 검색어 (검색어를 붙이면 바꿔 말한 질문에서 더 잘 맞는다 — results_retrieval.json)

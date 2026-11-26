@@ -380,7 +380,7 @@ def policy_chunks(p):
             parts.append(cur.strip())
         for n, part in enumerate(parts, 1):
             out.append({"id": f"{pid}#full{n}", "policyId": pid, "section": "full",
-                        "text": f"{name} | 공고 원문 {n}/{len(parts)}\n{part}", "say": "공고 원문에는 이렇게 적혀 있어요: " + (part if len(part) <= 300 else part[:300] + "…"), "quote": part[:200]})
+                        "text": f"{name} | 공고 원문 {n}/{len(parts)}\n{part}"})      # 보여 줄 문장(say·quote)은 rag.js 가 글에서 만든다 (웹 파일 크기를 줄이려고)
     return out
 
 
