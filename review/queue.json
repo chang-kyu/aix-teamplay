@@ -1,55 +1,8 @@
 {
-  "generatedAt": "2026-11-25",
+  "generatedAt": "2026-11-28",
   "classifier": "llm:exaone-4.0-32b + 규칙",
   "llmErrors": [],
   "items": [
-    {
-      "key": "post-1687885",
-      "kind": "update",
-      "policyId": "ANS013",
-      "matchScore": 1.0,
-      "datesVerified": true,
-      "periodQuote": "모집기간 : 2026. 11. 18.(수) 10:00 ~ 11. 26.(목) 18:00",
-      "title": "청년 행정체험 연수 — 새 공고",
-      "reason": "이름이 기존 사업과 비슷해요 (유사도 1.0)",
-      "source": {
-        "seq": 1687885,
-        "url": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1687885",
-        "title": "2027년 동계 청년 행정체험연수 참여자 모집공고",
-        "date": "2026-11-11",
-        "dept": "청년정책관",
-        "noticeNo": "안산시 공고 제2026-2287호"
-      },
-      "evidence": "모집기간 : 2026. 11. 18.(수) 10:00 ~ 11. 26.(목) 18:00",
-      "evidenceVerified": true,
-      "before": {
-        "apply": {
-          "start": "2026-05-27",
-          "end": "2026-06-04",
-          "periodText": "연 2회(5월·11월 모집). 동계 모집 예상: 2026년 11월",
-          "url": "https://apply.jobaba.net"
-        },
-        "sourceUrl": "https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001562"
-      },
-      "after": {
-        "apply": {
-          "start": "2026-11-18",
-          "end": "2026-11-26",
-          "periodText": "연 2회(5월·11월 모집)"
-        },
-        "sourceUrl": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1687885"
-      },
-      "notes": [
-        "거주 유형이 바뀌었을 수 있어요: 지금 R1 → 공고 R6"
-      ],
-      "by": "rules",
-      "createdAt": "2026-11-25",
-      "options": [
-        "apply",
-        "keep",
-        "ignore"
-      ]
-    },
     {
       "key": "post-1687420",
       "kind": "add",
@@ -149,6 +102,36 @@
       ]
     },
     {
+      "policyId": "EXT024",
+      "before": {
+        "apply": {
+          "start": "2025-11-06",
+          "end": "2025-11-25",
+          "periodText": "연례 공모전(2026 일정 미정)",
+          "url": null
+        },
+        "sourceUrl": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1654029"
+      },
+      "after": null,
+      "source": {
+        "url": "https://www.ansan.go.kr/www/common/bbs/selectBbsDetail.do?key=271&bbs_code=WWW13&bbs_seq=1654029",
+        "title": "2025 안산시 SNS 공모전 '안산의 □□을 담다'"
+      },
+      "evidence": "",
+      "evidenceVerified": false,
+      "notes": [],
+      "by": "rules",
+      "createdAt": "2026-11-26",
+      "key": "audit-EXT024-stale",
+      "kind": "retire",
+      "title": "2025 안산시 SNS 공모전 '안산의 □□을 담다'",
+      "reason": "마지막 마감일(2025-11-25) 뒤 1년 넘게 새 회차가 없어요. 사업이 끝났는지 확인해 주세요.",
+      "options": [
+        "retire",
+        "keep"
+      ]
+    },
+    {
       "policyId": "ANS001",
       "before": {
         "apply": {
@@ -233,36 +216,6 @@
       "kind": "check",
       "title": "안산시 청년큐브 운영",
       "reason": "신청기간 날짜가 없어서 마감 여부를 판정할 수 없어요. 분기에 한 번 원문을 확인해 주세요. (안내: 연 1~2회 모집)",
-      "options": [
-        "keep",
-        "retire"
-      ]
-    },
-    {
-      "policyId": "ANS013",
-      "before": {
-        "apply": {
-          "start": "2026-05-27",
-          "end": "2026-06-04",
-          "periodText": "연 2회(5월·11월 모집). 동계 모집 예상: 2026년 11월",
-          "url": "https://apply.jobaba.net"
-        },
-        "sourceUrl": "https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001562"
-      },
-      "after": null,
-      "source": {
-        "url": "https://www.ansan.go.kr/www/common/cntnts/selectContents.do?cntnts_id=C0001562",
-        "title": "청년 행정체험 연수"
-      },
-      "evidence": "",
-      "evidenceVerified": false,
-      "notes": [],
-      "by": "rules",
-      "createdAt": "2026-11-25",
-      "key": "audit-ANS013-expected-2026-11",
-      "kind": "check",
-      "title": "청년 행정체험 연수",
-      "reason": "예상 모집 시기(2026년 11월)가 됐는데 새 공고를 아직 못 찾았어요. 안산시청에서 직접 확인하고, 새 공고가 있으면 '추가 메모'에 주소를 남겨 주세요.",
       "options": [
         "keep",
         "retire"
